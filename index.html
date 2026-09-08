@@ -6,6 +6,8 @@
     <title>Scanner Resi Marketplace</title>
     <!-- Library Scanner -->
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Library OCR (Baca Teks dari Foto) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,6 +38,24 @@
         }
         button:disabled { background: #aaa; }
         #msg { text-align: center; font-weight: bold; margin-top: 10px; }
+
+        .input-row { display: flex; gap: 8px; margin-bottom: 15px; }
+        .input-row input { margin-bottom: 0; }
+        .btn-icon {
+            width: 48px; flex-shrink: 0; padding: 0; background: #2d7fee;
+            border: none; border-radius: 6px; color: white; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-icon:disabled { background: #aaa; }
+        .ocr-hint { font-size: 12px; color: #888; margin: -10px 0 15px; }
+        #ocr-results { margin: -10px 0 15px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .ocr-chip {
+            background: #eef2ff; color: #333; border: 1px solid #d7ddf5;
+            border-radius: 15px; padding: 5px 10px; font-size: 12px;
+            cursor: pointer; max-width: 100%; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+        }
+        .ocr-chip:active { background: #dde4ff; }
     </style>
 </head>
 <body>
@@ -49,7 +69,13 @@
         <input type="text" id="resi" placeholder="Arahkan kamera ke barcode resi..." required>
         
         <label>Nama SKU</label>
-        <input type="text" id="sku" placeholder="Contoh: Diora Pants" required>
+        <div class="input-row">
+            <input type="text" id="sku" placeholder="Contoh: Diora Pants" required>
+            <button type="button" id="btn-ocr" class="btn-icon" title="Foto label untuk baca teks otomatis">📷</button>
+        </div>
+        <input type="file" id="ocr-file" accept="image/*" capture="environment" style="display:none;">
+        <p class="ocr-hint">Tombol kamera: foto label produk, nama SKU akan dibaca otomatis (OCR).</p>
+        <div id="ocr-results"></div>
         
         <label>Variasi (Warna/Ukuran)</label>
         <input type="text" id="variasi" placeholder="Contoh: Hitam L" required>
@@ -139,6 +165,111 @@
             btn.disabled = false;
         });
     });
+
+    // ===================== OCR (Baca Nama SKU dari Foto Label) =====================
+    const btnOcr = document.getElementById('btn-ocr');
+    const ocrFileInput = document.getElementById('ocr-file');
+    const ocrResultsEl = document.getElementById('ocr-results');
+    const skuInput = document.getElementById('sku');
+    const msgEl = document.getElementById('msg');
+
+    btnOcr.addEventListener('click', () => {
+        ocrFileInput.click();
+    });
+
+    ocrFileInput.addEventListener('change', async function () {
+        const file = this.files[0];
+        if (!file) return;
+
+        ocrResultsEl.innerHTML = '';
+        msgEl.innerText = "Membaca teks dari foto (0%)...";
+        msgEl.style.color = "blue";
+        btnOcr.disabled = true;
+        const originalIcon = btnOcr.innerText;
+        btnOcr.innerText = "⏳";
+
+        try {
+            const processedImage = await preprocessImageForOCR(file);
+
+            const { data } = await Tesseract.recognize(processedImage, 'eng+ind', {
+                logger: (info) => {
+                    if (info.status === 'recognizing text') {
+                        const percent = Math.round(info.progress * 100);
+                        msgEl.innerText = `Membaca teks dari foto (${percent}%)...`;
+                    }
+                }
+            });
+
+            // Ambil baris teks yang cukup panjang untuk jadi kandidat nama SKU
+            const lines = data.text
+                .split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length >= 2);
+
+            if (lines.length === 0) {
+                msgEl.innerText = "Teks tidak terbaca jelas, silakan isi manual.";
+                msgEl.style.color = "red";
+            } else {
+                // Isi otomatis kandidat teks terpanjang (biasanya nama produk paling lengkap)
+                const bestGuess = lines.reduce((a, b) => (b.length > a.length ? b : a));
+                skuInput.value = bestGuess;
+
+                msgEl.innerText = "Teks terbaca! Periksa, atau ketuk pilihan lain di bawah.";
+                msgEl.style.color = "green";
+
+                // Tampilkan semua baris sebagai pilihan yang bisa diketuk
+                lines.forEach(line => {
+                    const chip = document.createElement('div');
+                    chip.className = 'ocr-chip';
+                    chip.innerText = line;
+                    chip.addEventListener('click', () => {
+                        skuInput.value = line;
+                        skuInput.focus();
+                    });
+                    ocrResultsEl.appendChild(chip);
+                });
+            }
+        } catch (err) {
+            msgEl.innerText = "Gagal membaca teks dari foto.";
+            msgEl.style.color = "red";
+        } finally {
+            btnOcr.disabled = false;
+            btnOcr.innerText = originalIcon;
+            ocrFileInput.value = ''; // reset agar foto yang sama bisa dipilih lagi
+        }
+    });
+
+    // Perbesar & pertajam kontras foto sebelum OCR supaya teks lebih mudah terbaca
+    function preprocessImageForOCR(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const scale = 2;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const d = imgData.data;
+                    for (let i = 0; i < d.length; i += 4) {
+                        const avg = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+                        const val = avg > 150 ? 255 : (avg < 90 ? 0 : avg);
+                        d[i] = d[i + 1] = d[i + 2] = val;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
 </script>
 
 </body>
