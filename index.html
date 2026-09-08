@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner Resi Marketplace</title>
+    <!-- Library Scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f5f6;
+            margin: 0; padding: 15px;
+        }
+        .container {
+            max-width: 450px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 15px; }
+        label { font-size: 14px; color: #555; font-weight: bold; margin-bottom: 5px; display: block; }
+        input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;
+            font-size: 15px;
+        }
+        input:focus { border-color: #ee4d2d; outline: none; }
+        button {
+            width: 100%; padding: 14px; background: #ee4d2d; color: white;
+            border: none; border-radius: 6px; font-size: 16px; font-weight: bold;
+            cursor: pointer;
+        }
+        button:disabled { background: #aaa; }
+        #msg { text-align: center; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Scanner Resi</h2>
+    <div id="reader"></div>
+    
+    <form id="form-data">
+        <label>Nomor Resi (Otomatis dari Scanner)</label>
+        <input type="text" id="resi" placeholder="Arahkan kamera ke barcode resi..." required>
+        
+        <label>Nama SKU</label>
+        <input type="text" id="sku" placeholder="Contoh: Diora Pants" required>
+        
+        <label>Variasi (Warna/Ukuran)</label>
+        <input type="text" id="variasi" placeholder="Contoh: Hitam L" required>
+        
+        <label>Quantity</label>
+        <input type="number" id="qty" value="1" required>
+        
+        <button type="submit" id="btn-submit">Simpan ke Spreadsheet</button>
+    </form>
+    <p id="msg"></p>
+</div>
+
+<script>
+    // ⚠️ GANTI URL DI BAWAH INI DENGAN URL DARI GOOGLE APPS SCRIPT ANDA ⚠️
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4_xHRW7goOgIqqOUsrGyhr63rgXvY5biiWzOOZ_vbYnHmtn5BNBAIfDfj7GmXUnsu/exec';
+
+    // Inisialisasi Scanner
+    const html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 10, qrbox: { width: 250, height: 100 } };
+
+    // Jika barcode berhasil discan
+    function onScanSuccess(decodedText) {
+        // Hentikan scanner sementara agar tidak dobel scan
+        html5QrCode.stop().then(() => {
+            // Masukkan hasil scan ke kolom No Resi
+            document.getElementById('resi').value = decodedText;
+            document.getElementById('msg').innerText = "Resi terbaca! Silakan isi SKU & Variasi.";
+            document.getElementById('msg').style.color = "blue";
+            
+            // Pindahkan kursor otomatis ke kolom SKU
+            document.getElementById('sku').focus();
+        });
+    }
+
+    // Mulai kamera belakang
+    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+    .catch(err => {
+        document.getElementById('msg').innerText = "Kamera tidak dapat diakses.";
+        document.getElementById('msg').style.color = "red";
+    });
+
+    // Proses pengiriman data saat tombol simpan ditekan
+    document.getElementById('form-data').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btn-submit');
+        const msg = document.getElementById('msg');
+        
+        btn.innerText = "Menyimpan...";
+        btn.disabled = true;
+        msg.innerText = "";
+        
+        const dataPayload = {
+            resi: document.getElementById('resi').value,
+            sku: document.getElementById('sku').value,
+            variasi: document.getElementById('variasi').value,
+            qty: document.getElementById('qty').value
+        };
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Mencegah error CORS
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataPayload)
+        })
+        .then(() => {
+            msg.innerText = "Berhasil disimpan!";
+            msg.style.color = "green";
+            
+            // Kosongkan form kecuali QTY
+            document.getElementById('resi').value = '';
+            document.getElementById('sku').value = '';
+            document.getElementById('variasi').value = '';
+            
+            // Nyalakan kamera lagi setelah 1.5 detik
+            setTimeout(() => {
+                msg.innerText = "";
+                btn.innerText = "Simpan ke Spreadsheet";
+                btn.disabled = false;
+                html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+            }, 1500);
+        })
+        .catch(error => {
+            msg.innerText = "Terjadi kesalahan koneksi!";
+            msg.style.color = "red";
+            btn.innerText = "Simpan ke Spreadsheet";
+            btn.disabled = false;
+        });
+    });
+</script>
+
+</body>
+</html>
