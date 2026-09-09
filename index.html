@@ -3,510 +3,657 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pesanan Fashion</title>
+    <title>Sistem Manajemen Pesanan Fashion</title>
 
     <!-- ===== PWA: manifest, theme color, ikon ===== -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3b82f6">
+    <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f3f4f6; 
-            margin: 0; 
-            padding: 0;
-            padding-bottom: 70px;
+        /* --- 1. CSS VARIABLES & BASE SETUP --- */
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --bg-body: #f3f4f6;
+            --bg-surface: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         [hidden] { display: none !important; }
-        .container { 
-            max-width: 800px; 
-            margin: 20px auto; 
-            background: white; 
-            padding: 20px 30px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-            width: 90%;
-            box-sizing: border-box;
-        }
-        h1, h2 { text-align: center; color: #1f2937; margin-top: 0; }
         
-        /* Navigasi Bawah */
+        body { background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0 0 80px 0; }
+        
+        .container { 
+            max-width: 800px; margin: 20px auto; background: var(--bg-surface); 
+            padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow); 
+            width: 92%; transition: all 0.3s ease;
+        }
+
+        h1, h2 { text-align: center; margin-top: 0; color: var(--text-main); font-weight: 700; }
+
+        /* --- 2. LAYOUT & GRID SYSTEM --- */
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        
+        /* --- 3. DASHBOARD WIDGETS --- */
+        .filter-section { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .filter-section input { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-weight: bold; font-size: 15px;}
+        
+        .sync-status { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        .sync-status.offline { color: #dc2626; }
+
+        .dashboard-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .card-stat { border-radius: var(--radius); padding: 20px; text-align: center; color: white; box-shadow: var(--shadow); transition: transform 0.2s; }
+        .card-stat:active { transform: scale(0.98); }
+        .card-stat h3 { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
+        .card-stat .angka { font-size: 42px; font-weight: 800; margin-top: 8px; }
+        
+        .bg-masuk { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .bg-terkirim { background: linear-gradient(135deg, #10b981, #059669); }
+        .bg-total { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); grid-column: span 2; cursor: pointer; }
+
+        /* --- 4. TABS & ORDER CARDS (RINCIAN BARU) --- */
+        .detail-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .detail-header h2 { margin: 0; flex: 1; text-align: left; }
+        
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .tab-btn { 
+            flex: 1; min-width: 100px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); 
+            background: white; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.2s; 
+        }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .search-box { margin-bottom: 15px; }
+        
+        .order-list { display: flex; flex-direction: column; gap: 12px; }
+        .order-card { 
+            border: 1px solid var(--border); border-radius: 10px; padding: 15px; 
+            background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .order-card-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
+        .order-card-header .buyer-info { font-size: 15px; color: var(--text-main); }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .badge-platform { background: #e5e7eb; color: #4b5563; margin-right: 5px; }
+        .badge-warning { background: #fef3c7; color: #d97706; }
+        .badge-success { background: #d1fae5; color: #059669; }
+        
+        .order-card-body { font-size: 14px; color: var(--text-main); line-height: 1.5; }
+        .order-card-body .product-name { font-weight: 600; font-size: 15px; color: var(--primary); }
+        .order-card-body .variant { color: var(--text-muted); font-size: 13px; }
+        
+        .order-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 13px; }
+        .qty-box { background: #f3f4f6; padding: 4px 10px; border-radius: 6px; font-weight: bold; }
+        .resi-box { color: var(--text-muted); font-family: monospace; }
+
+        .empty-state { text-align: center; padding: 30px; color: var(--text-muted); background: #f9fafb; border-radius: 10px; border: 1px dashed var(--border); }
+
+        /* --- 5. FORMS & INPUTS --- */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: var(--text-main); }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; transition: border 0.3s; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        input[readonly] { background-color: #f9fafb; cursor: not-allowed; }
+
+        .btn { width: 100%; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; margin-top: 10px; }
+        .btn-primary:disabled { background: var(--text-muted); cursor: wait; }
+        .btn-secondary { background: #f3f4f6; color: var(--text-main); width: auto; padding: 10px 15px; }
+
+        /* --- 6. TOAST & BOTTOM NAV --- */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 12px 20px; border-radius: 8px; color: white; font-weight: 600; box-shadow: var(--shadow); animation: slideIn 0.3s ease-out; }
+        .toast.success { background-color: var(--success); }
+        .toast.error { background-color: #dc2626; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; background: white;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-around; z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface);
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05); display: flex; z-index: 1000;
         }
         .nav-item {
-            flex: 1; text-align: center; padding: 15px 0; color: #6b7280; font-weight: 600;
-            cursor: pointer; transition: 0.3s; font-size: 14px; background: none; border: none; font-family: inherit;
+            flex: 1; padding: 12px 0; background: none; border: none; font-size: 12px; font-weight: 600;
+            color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
         }
-        .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: #f0f9ff; }
-
-        /* --- CSS DASHBOARD --- */
-        .date-filter { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; gap: 10px; font-weight: bold; color: #4b5563; }
-        .date-filter input { padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 16px; }
-        .sync-status { text-align: center; font-size: 12px; color: #9ca3af; margin-bottom: 20px; }
-        
-        #dashboard-view { display: flex; flex-direction: column; align-items: center; }
-        .mini-cards { display: flex; gap: 15px; width: 100%; max-width: 400px; margin-bottom: 20px; }
-        .mini-card { flex: 1; border-radius: 12px; padding: 18px 10px; text-align: center; color: white; }
-        .mini-card h3 { margin: 0; font-size: 13px; text-transform: uppercase; }
-        .mini-card .mini-number { font-size: 38px; font-weight: bold; margin-top: 6px; }
-        .mini-card-masuk { background: #f59e0b; }
-        .mini-card-terkirim { background: #10b981; }
-
-        .card { background: #3b82f6; color: white; padding: 30px; border-radius: 16px; text-align: center; cursor: pointer; width: 100%; max-width: 340px; }
-        .card .number { font-size: 72px; font-weight: bold; margin-top: 10px; }
-        
-        .btn-back { background: #6b7280; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-bottom:15px; }
-        input[type="text"], input[type="search"], input[type="number"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px;}
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
-        th { background-color: #f9fafb; white-space: nowrap; }
-        .table-responsive { overflow-x: auto; }
-
-        /* --- CSS FORM INPUT --- */
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #4b5563; font-size: 14px;}
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; box-sizing: border-box;}
-        .row-flex { display: flex; gap: 15px; flex-wrap: wrap;}
-        .col-flex { flex: 1; min-width: 140px;}
-        .btn-submit { width: 100%; background: #3b82f6; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-submit:disabled { background: #9ca3af; }
-        .alert { display: none; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: 600; }
-        .alert.success { background: #d1fae5; color: #065f46; display: block; }
-        .alert.error { background: #fee2e2; color: #991b1b; display: block; }
-
+        .nav-item span { font-size: 20px; }
+        .nav-item.active { color: var(--primary); background: #eff6ff; border-top: 3px solid var(--primary); }
     </style>
 </head>
 <body>
 
+<div id="toast-container" aria-live="polite"></div>
+
 <main>
-<!-- HALAMAN 1: DASHBOARD & DETAIL -->
-<section id="page-dashboard" aria-label="Dashboard">
-    <div class="container">
-        
-        <div id="dashboard-view">
-            <h1>Dashboard Harian</h1>
-            <div class="date-filter">
-                <input type="date" id="filterTanggal" aria-label="Filter tanggal">
-            </div>
-            <div class="sync-status" id="sync-status" aria-live="polite">Memuat data...</div>
-
-            <div class="mini-cards">
-                <div class="mini-card mini-card-masuk">
-                    <h3>Pesanan Masuk</h3>
-                    <div class="mini-number" id="masuk-angka">0</div>
+    <!-- HALAMAN 1: DASHBOARD -->
+    <section id="page-dashboard" aria-label="Dashboard Utama">
+        <div class="container">
+            <div id="view-summary">
+                <h1>Dashboard Harian</h1>
+                <div class="filter-section">
+                    <input type="date" id="filterTanggal" aria-label="Filter tanggal">
                 </div>
-                <div class="mini-card mini-card-terkirim">
-                    <h3>Terkirim</h3>
-                    <div class="mini-number" id="terkirim-angka">0</div>
+                <div class="sync-status" id="sync-status">
+                    <span id="sync-icon">🔄</span> <span id="sync-text">Memuat data sistem...</span>
+                </div>
+
+                <div class="dashboard-cards">
+                    <div class="card-stat bg-masuk">
+                        <h3>Perlu Dikirim</h3>
+                        <div class="angka" id="stat-masuk">0</div>
+                    </div>
+                    <div class="card-stat bg-terkirim">
+                        <h3>Dikirim</h3>
+                        <div class="angka" id="stat-terkirim">0</div>
+                    </div>
+                    <div class="card-stat bg-total" id="btn-show-details" role="button" tabindex="0">
+                        <h3>Total Produk Terjual</h3>
+                        <div class="angka" id="stat-total">0</div>
+                        <p style="margin: 8px 0 0; font-size: 12px; opacity: 0.8;">Klik untuk melihat rincian pesanan</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="card" id="card-total" role="button" tabindex="0">
-                <h2>Total Produk</h2>
-                <div class="number" id="total-angka">0</div>
-                <p style="margin-top:10px; font-size:14px;">Klik untuk rincian variasi</p>
+            <!-- HALAMAN DETAIL (Sub-view Rincian Transaksi) -->
+            <div id="view-details" hidden>
+                <div class="detail-header">
+                    <button type="button" class="btn btn-secondary" id="btn-back">← Kembali</button>
+                    <h2>Rincian Pesanan</h2>
+                </div>
+                
+                <!-- MENU TAB STATUS -->
+                <div class="tabs" id="statusTabs">
+                    <button class="tab-btn active" data-target="all">Semua</button>
+                    <button class="tab-btn" data-target="masuk">Perlu Dikirim</button>
+                    <button class="tab-btn" data-target="terkirim">Dikirim</button>
+                </div>
+
+                <div class="search-box">
+                    <input type="search" id="searchInput" placeholder="🔍 Cari Pembeli, Produk, atau Platform..." autocomplete="off">
+                </div>
+                
+                <!-- CONTAINER DAFTAR PESANAN (CARD VIEW) -->
+                <div id="order-list-container" class="order-list">
+                    <!-- Data Kartu Pesanan akan dimuat di sini -->
+                </div>
             </div>
         </div>
+    </section>
 
-        <div id="details-view" hidden>
-            <button type="button" class="btn-back" id="btn-back">← Kembali ke Ringkasan</button>
-            <h2>Rincian Pesanan</h2>
-            <input type="search" id="searchInput" placeholder="Cari Pembeli / Produk / Platform..." aria-label="Cari data pesanan">
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                          <th>Pltfrm</th><th>Pembeli/ID</th><th>Produk</th><th>Warna</th><th>Ukrn</th><th>Qty</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body"></tbody>
-                </table>
-            </div>
+    <!-- HALAMAN 2: INPUT FORM -->
+    <section id="page-input" aria-label="Input Pesanan Baru" hidden>
+        <div class="container">
+            <h1>Input Pesanan</h1>
+            <form id="orderForm">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="input_tanggal">Tanggal</label>
+                        <input type="date" id="input_tanggal" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_pesanan">ID Pesanan (Auto)</label>
+                        <input type="text" id="id_pesanan" required readonly>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="platform">Platform Penjualan</label>
+                        <select id="platform" required>
+                            <option value="Shopee">Shopee</option>
+                            <option value="TikTok Shop">TikTok Shop</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Offline">Offline / Toko</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="nama_pembeli">Nama Pembeli <small>(Opsional)</small></label>
+                        <input type="text" id="nama_pembeli" placeholder="Nama / Username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="nama_produk">Nama Produk</label>
+                    <input type="text" id="nama_produk" list="daftar-produk" placeholder="Contoh: Diora Pants" required>
+                    <datalist id="daftar-produk">
+                        <option value="Diora Pants">
+                        <option value="Sakura Dress">
+                    </datalist>
+                </div>
+                
+                <div class="form-group">
+                    <label for="warna">Varian Warna</label>
+                    <input type="text" id="warna" list="daftar-warna" placeholder="Contoh: Hitam, Maroon" required>
+                    <datalist id="daftar-warna">
+                        <option value="Hitam"><option value="Putih"><option value="Maroon">
+                        <option value="Navy"><option value="Cream">
+                    </datalist>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="ukuran">Ukuran</label>
+                        <select id="ukuran" required>
+                            <option value="" disabled selected>Pilih Ukuran</option>
+                            <option value="All Size">All Size</option>
+                            <option value="S">S</option><option value="M">M</option>
+                            <option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
+                            <option value="27">27</option><option value="28">28</option><option value="29">29</option>
+                            <option value="30">30</option><option value="31">31</option><option value="32">32</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Kuantitas (Qty)</label>
+                        <input type="number" id="quantity" min="1" value="1" required>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="status">Status Pemrosesan</label>
+                        <select id="status" required>
+                            <option value="Masuk">Perlu Dikirim (Masuk)</option>
+                            <option value="Terkirim">Dikirim (Selesai)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="resi">Nomor Resi <small>(Opsional)</small></label>
+                        <input type="text" id="resi" placeholder="Input resi pengiriman">
+                    </div>
+                </div>
+
+                <button type="submit" id="btnSubmit" class="btn btn-primary">Simpan Pesanan</button>
+            </form>
         </div>
-
-    </div>
-</section>
-
-<!-- HALAMAN 2: INPUT FORM -->
-<section id="page-input" aria-label="Input Pesanan Baru" hidden>
-    <div class="container">
-        <h1>Input Pesanan Baru</h1>
-        <div id="alertBox" class="alert" role="alert"></div>
-
-        <form id="orderForm">
-            <div class="row-flex">
-                <div class="form-group col-flex">
-                    <label for="input_tanggal">Tanggal</label>
-                    <input type="date" id="input_tanggal" required>
-                </div>
-                <div class="form-group col-flex">
-                    <label for="id_pesanan">ID Pesanan</label>
-                    <input type="text" id="id_pesanan" required readonly style="background-color: #f9fafb;">
-                </div>
-            </div>
-
-            <!-- PENAMBAHAN PLATFORM & PEMBELI -->
-            <div class="row-flex">
-                <div class="form-group col-flex">
-                    <label for="platform">Platform / Sumber</label>
-                    <select id="platform" required>
-                        <option value="Shopee">Shopee</option>
-                        <option value="TikTok Shop">TikTok Shop</option>
-                        <option value="WhatsApp">WhatsApp</option>
-                        <option value="Offline">Offline</option>
-                        <option value="Lainnya">Lainnya</option>
-                    </select>
-                </div>
-                <div class="form-group col-flex">
-                    <label for="nama_pembeli">Nama Pembeli <small>(Opsional)</small></label>
-                    <input type="text" id="nama_pembeli" placeholder="Nama / Username">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="nama_produk">Nama Produk</label>
-                <input type="text" id="nama_produk" list="daftar-produk" placeholder="Contoh: Diora Pants" required>
-                <datalist id="daftar-produk">
-                    <option value="Diora Pants">
-                    <option value="Sakura Dress">
-                </datalist>
-            </div>
-            
-            <div class="form-group">
-                <label for="warna">Varian Warna</label>
-                <input type="text" id="warna" list="daftar-warna" placeholder="Contoh: Hitam, Putih, Maroon" required>
-                <datalist id="daftar-warna">
-                    <option value="Hitam">
-                    <option value="Putih">
-                    <option value="Maroon">
-                    <option value="Navy">
-                    <option value="Cream">
-                </datalist>
-            </div>
-
-            <div class="row-flex">
-                <div class="form-group col-flex">
-                    <label for="ukuran">Ukuran</label>
-                    <select id="ukuran" required>
-                        <option value="" disabled selected>Pilih Ukuran</option>
-                        <option value="S">S</option>
-                        <option value="M">M</option>
-                        <option value="L">L</option>
-                        <option value="XL">XL</option>
-                        <option value="XXL">XXL</option>
-                        <option value="27">27</option>
-                        <option value="28">28</option>
-                        <option value="29">29</option>
-                        <option value="30">30</option>
-                        <option value="31">31</option>
-                        <option value="32">32</option>
-                    </select>
-                </div>
-                <div class="form-group col-flex">
-                    <label for="quantity">Quantity</label>
-                    <input type="number" id="quantity" min="1" value="1" required>
-                </div>
-            </div>
-
-            <!-- PENAMBAHAN RESI & STATUS -->
-            <div class="row-flex">
-                <div class="form-group col-flex">
-                    <label for="status">Status</label>
-                    <select id="status" required>
-                        <option value="Masuk">Masuk</option>
-                        <option value="Terkirim">Terkirim</option>
-                    </select>
-                </div>
-                <div class="form-group col-flex">
-                    <label for="resi">Nomor Resi <small>(Opsional)</small></label>
-                    <input type="text" id="resi" placeholder="Input resi jika dikirim">
-                </div>
-            </div>
-
-            <button type="submit" id="btnSubmit" class="btn-submit">Simpan Data</button>
-        </form>
-    </div>
-</section>
+    </section>
 </main>
 
-<!-- NAVIGASI BAWAH -->
-<nav class="bottom-nav" aria-label="Navigasi utama">
-    <button type="button" class="nav-item active" id="nav-dashboard" aria-current="page">
-        📊<br>Dashboard
+<nav class="bottom-nav" aria-label="Navigasi Bawah">
+    <button type="button" class="nav-item active" id="nav-dashboard">
+        <span>📊</span> Dashboard
     </button>
     <button type="button" class="nav-item" id="nav-input">
-        📝<br>Input Data
+        <span>📝</span> Input Data
     </button>
 </nav>
 
 <script>
-    // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec';
-    
-    const SYNC_INTERVAL_MS = 60000; 
-    const FETCH_TIMEOUT_MS = 15000; 
-    let allData = [];
-    let isSyncing = false;
+/**
+ * STRUKTUR APLIKASI MODULAR
+ */
 
-    function escapeHTML(str) {
+// 1. CONFIGURATION
+const Config = {
+    API_URL: 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec',
+    SYNC_INTERVAL: 60000,
+    FETCH_TIMEOUT: 15000,
+    CACHE_KEY: 'fashion_orders_cache'
+};
+
+// 2. STATE MANAGEMENT
+const State = {
+    allData: [],
+    isSyncing: false,
+    selectedDate: '',
+    currentTabStatus: 'all' // 'all', 'masuk', 'terkirim'
+};
+
+// 3. UTILITIES
+const Utils = {
+    escapeHTML: (str) => {
         const div = document.createElement('div');
         div.textContent = (str === null || str === undefined) ? '' : String(str);
         return div.innerHTML;
+    },
+    getToday: () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    },
+    generateOrderID: () => {
+        return 'INV-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
     }
+};
 
-    async function fetchWithTimeout(url, options = {}) {
+// 4. API HANDLER
+const API = {
+    async fetchWithTimeout(url, options = {}) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        const id = setTimeout(() => controller.abort(), Config.FETCH_TIMEOUT);
         try {
-            return await fetch(url, { ...options, signal: controller.signal });
-        } finally {
-            clearTimeout(timeoutId);
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(id);
+            return response;
+        } catch (error) {
+            clearTimeout(id);
+            throw error;
         }
-    }
-
-    function switchPage(page) {
-        const isDashboard = page === 'dashboard';
-        const navDashboard = document.getElementById('nav-dashboard');
-        const navInput = document.getElementById('nav-input');
-
-        document.getElementById('page-dashboard').hidden = !isDashboard;
-        document.getElementById('page-input').hidden = isDashboard;
-        navDashboard.classList.toggle('active', isDashboard);
-        navInput.classList.toggle('active', !isDashboard);
-
-        if (isDashboard) {
-            navDashboard.setAttribute('aria-current', 'page');
-            navInput.removeAttribute('aria-current');
-            syncData(); 
-        } else {
-            navInput.setAttribute('aria-current', 'page');
-            navDashboard.removeAttribute('aria-current');
-            generateID(); 
+    },
+    
+    async getData() {
+        const cachedData = localStorage.getItem(Config.CACHE_KEY);
+        if (cachedData) {
+            State.allData = JSON.parse(cachedData);
+            UI.renderDashboard();
         }
-    }
 
-    function toggleDetails(show) {
-        document.getElementById('dashboard-view').hidden = show;
-        document.getElementById('details-view').hidden = !show;
-        if (!show) {
-            document.getElementById('searchInput').value = '';
-        }
-        searchTable();
-    }
+        if (State.isSyncing) return;
+        State.isSyncing = true;
+        UI.updateSyncStatus('syncing');
 
-    function getToday() {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-    }
-    document.getElementById('filterTanggal').value = getToday();
-    document.getElementById('input_tanggal').value = getToday();
-
-    async function syncData() {
-        if (isSyncing) return; 
-        isSyncing = true;
         try {
-            document.getElementById('sync-status').innerText = '🔄 Menyinkronkan data...';
-            const response = await fetchWithTimeout(API_URL, { cache: 'no-store' });
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            const text = await response.text();
+            const res = await this.fetchWithTimeout(Config.API_URL, { cache: 'no-store' });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const text = await res.text();
             
             try {
                 let json = JSON.parse(text);
-                allData = Array.isArray(json) ? json : (json.data || []);
+                State.allData = Array.isArray(json) ? json : (json.data || []);
             } catch (e) {
-                allData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+                State.allData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
             }
             
-            document.getElementById('sync-status').innerText = '🟢 Live • Tersinkron ' + new Date().toLocaleTimeString('id-ID');
-            filterAndDisplay();
+            localStorage.setItem(Config.CACHE_KEY, JSON.stringify(State.allData));
+            UI.updateSyncStatus('success');
+            UI.renderDashboard();
         } catch (error) {
-            const pesan = (error.name === 'AbortError') ? 'server tidak merespons' : error.message;
-            document.getElementById('sync-status').innerText = '🔴 Gagal sinkron (' + pesan + '), mencoba lagi...';
+            UI.updateSyncStatus('error', error.message);
         } finally {
-            isSyncing = false;
+            State.isSyncing = false;
         }
+    },
+
+    async postData(payload) {
+        return await this.fetchWithTimeout(Config.API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
     }
+};
 
-    function onDateChange() { filterAndDisplay(); }
+// 5. USER INTERFACE (UI) HANDLER
+const UI = {
+    init() {
+        State.selectedDate = Utils.getToday();
+        document.getElementById('filterTanggal').value = State.selectedDate;
+        document.getElementById('input_tanggal').value = State.selectedDate;
+        
+        this.bindEvents();
+    },
 
-    function filterAndDisplay() {
-        const selectedDate = document.getElementById('filterTanggal').value;
-        let totalQty = 0;
-        let tableHTML = '';
-        const idsMasuk = new Set(), idsTerkirim = new Set();
+    bindEvents() {
+        // Navigasi Bawah
+        document.getElementById('nav-dashboard').addEventListener('click', () => this.switchPage('dashboard'));
+        document.getElementById('nav-input').addEventListener('click', () => this.switchPage('input'));
+        
+        // Interaksi Dashboard
+        document.getElementById('filterTanggal').addEventListener('change', (e) => {
+            State.selectedDate = e.target.value;
+            this.renderDashboard();
+        });
+        document.getElementById('btn-show-details').addEventListener('click', () => this.toggleDetails(true));
+        document.getElementById('btn-back').addEventListener('click', () => this.toggleDetails(false));
+        document.getElementById('searchInput').addEventListener('input', (e) => this.filterCards(e.target.value));
+        
+        // Tab Menu Status
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                tabs.forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                State.currentTabStatus = e.target.getAttribute('data-target');
+                this.filterCards(document.getElementById('searchInput').value);
+            });
+        });
 
-        allData.forEach(row => {
-            if(!row['Tanggal']) return;
-            let rawDate = row['Tanggal'].toString();
-            let rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
+        // Form Submit
+        document.getElementById('orderForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+    },
+
+    switchPage(page) {
+        const isDash = page === 'dashboard';
+        document.getElementById('page-dashboard').hidden = !isDash;
+        document.getElementById('page-input').hidden = isDash;
+        
+        document.getElementById('nav-dashboard').classList.toggle('active', isDash);
+        document.getElementById('nav-input').classList.toggle('active', !isDash);
+
+        if (isDash) {
+            API.getData();
+        } else {
+            document.getElementById('id_pesanan').value = Utils.generateOrderID();
+        }
+    },
+
+    toggleDetails(show) {
+        document.getElementById('view-summary').hidden = show;
+        document.getElementById('view-details').hidden = !show;
+        if (!show) {
+            document.getElementById('searchInput').value = '';
+            document.querySelectorAll('.tab-btn')[0].click(); // Reset ke tab "Semua"
+        }
+    },
+
+    updateSyncStatus(status) {
+        const icon = document.getElementById('sync-icon');
+        const text = document.getElementById('sync-text');
+        const container = document.getElementById('sync-status');
+        
+        if (status === 'syncing') {
+            icon.textContent = '🔄'; text.textContent = 'Menyinkronkan...';
+            container.classList.remove('offline');
+        } else if (status === 'success') {
+            const time = new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
+            icon.textContent = '🟢'; text.textContent = `Tersinkron (Pukul ${time})`;
+            container.classList.remove('offline');
+        } else {
+            icon.textContent = '🔴'; text.textContent = `Gagal sinkron. Menggunakan data lokal.`;
+            container.classList.add('offline');
+        }
+    },
+
+    renderDashboard() {
+        let totalQty = 0, countMasuk = 0, countTerkirim = 0;
+        let listHTML = '';
+
+        State.allData.forEach(row => {
+            if (!row['Tanggal']) return;
+            const rawDate = String(row['Tanggal']);
+            const rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
             
-            if (rowDate === selectedDate) {
+            if (rowDate === State.selectedDate) {
                 const qty = parseInt(row['Quantity']) || 0;
                 totalQty += qty;
                 
                 const status = (row['Status'] || '').toLowerCase();
-                const id = row['ID'] || JSON.stringify(row);
-                if (status.includes('terkirim') || status.includes('kirim')) idsTerkirim.add(id);
-                else idsMasuk.add(id);
+                const isTerkirim = status.includes('terkirim') || status.includes('kirim');
+                
+                if (isTerkirim) countTerkirim++;
+                else countMasuk++;
 
-                // Mengambil nilai tambahan dengan aman, fallback ke ID jika pembeli kosong
-                let platform = escapeHTML(row['Platform'] || '-');
-                let pembeli = escapeHTML(row['Nama Pembeli'] || row['ID'] || '-');
+                let platform = Utils.escapeHTML(row['Platform'] || '-');
+                let pembeli = Utils.escapeHTML(row['Nama Pembeli'] || row['ID'] || 'Tanpa Nama');
+                let produk = Utils.escapeHTML(row['Nama Produk'] || '-');
+                let warna = Utils.escapeHTML(row['Warna'] || '-');
+                let ukuran = Utils.escapeHTML(row['Ukuran'] || '-');
+                let resi = Utils.escapeHTML(row['Resi'] || '');
 
-                tableHTML += `<tr>
-                    <td>${platform}</td>
-                    <td><strong>${pembeli}</strong></td>
-                    <td>${escapeHTML(row['Nama Produk'] || '-')}</td>
-                    <td>${escapeHTML(row['Warna'] || '-')}</td>
-                    <td>${escapeHTML(row['Ukuran'] || '-')}</td>
-                    <td>${qty}</td>
-                </tr>`;
+                let badgeStatus = isTerkirim 
+                    ? `<span class="badge badge-success">Dikirim</span>` 
+                    : `<span class="badge badge-warning">Perlu Dikirim</span>`;
+                
+                let dataStatusVal = isTerkirim ? 'terkirim' : 'masuk';
+
+                // TEMPLATE KARTU PESANAN
+                listHTML += `
+                <div class="order-card" data-status="${dataStatusVal}">
+                    <div class="order-card-header">
+                        <div class="buyer-info">
+                            <span class="badge badge-platform">${platform}</span>
+                            <strong>${pembeli}</strong>
+                        </div>
+                        <div>${badgeStatus}</div>
+                    </div>
+                    <div class="order-card-body">
+                        <div class="product-name">${produk}</div>
+                        <div class="variant">Warna: ${warna} | Ukuran: ${ukuran}</div>
+                    </div>
+                    <div class="order-card-footer">
+                        <span class="qty-box">Qty: ${qty}</span>
+                        ${resi ? `<span class="resi-box">Resi: ${resi}</span>` : ''}
+                    </div>
+                </div>`;
             }
         });
 
-        document.getElementById('masuk-angka').innerText = idsMasuk.size;
-        document.getElementById('terkirim-angka').innerText = idsTerkirim.size;
-        document.getElementById('total-angka').innerText = totalQty;
-        document.getElementById('table-body').innerHTML = tableHTML || `<tr><td colspan="6" style="text-align:center;">Tidak ada pesanan</td></tr>`;
-        searchTable();
-    }
-
-    function searchTable() {
-        let input = document.getElementById("searchInput").value.toLowerCase();
-        let tr = document.getElementById("table-body").getElementsByTagName("tr");
-        for (let i = 0; i < tr.length; i++) {
-            let tdPltfrm = tr[i].getElementsByTagName("td")[0];
-            let tdPembeli = tr[i].getElementsByTagName("td")[1];
-            let tdProduk = tr[i].getElementsByTagName("td")[2];
-            let tdWarna = tr[i].getElementsByTagName("td")[3];
-            
-            if (tdPltfrm && tdPembeli && tdProduk && tdWarna) {
-                let txt = (tdPltfrm.textContent + " " + tdPembeli.textContent + " " + tdProduk.textContent + " " + tdWarna.textContent).toLowerCase();
-                tr[i].style.display = txt.includes(input) ? "" : "none";
-            }       
-        }
-    }
-
-    function generateID() {
-        const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-        document.getElementById('id_pesanan').value = 'INV-' + Date.now() + '-' + rand;
-    }
-
-    document.getElementById('orderForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btn = document.getElementById('btnSubmit');
-        const alertBox = document.getElementById('alertBox');
-
-        const namaProduk = document.getElementById('nama_produk').value.trim();
-        const warna = document.getElementById('warna').value.trim();
-        const ukuran = document.getElementById('ukuran').value;
-        const quantity = parseInt(document.getElementById('quantity').value, 10);
-
-        if (!namaProduk || !warna || !ukuran) {
-            alertBox.innerText = "⚠️ Nama produk, warna, dan ukuran wajib diisi.";
-            alertBox.className = "alert error";
-            return;
-        }
-        if (!quantity || quantity < 1) {
-            alertBox.innerText = "⚠️ Quantity harus angka lebih dari 0.";
-            alertBox.className = "alert error";
-            return;
+        document.getElementById('stat-masuk').innerText = countMasuk;
+        document.getElementById('stat-terkirim').innerText = countTerkirim;
+        document.getElementById('stat-total').innerText = totalQty;
+        
+        if (!listHTML) {
+            listHTML = `<div class="empty-state">Belum ada pesanan pada tanggal ini.</div>`;
         }
         
-        // PEMBARUAN: Payload data mencakup field baru
+        document.getElementById('order-list-container').innerHTML = listHTML;
+        this.filterCards(document.getElementById('searchInput').value); // Re-apply filter
+    },
+
+    filterCards(keyword) {
+        keyword = keyword.toLowerCase();
+        const cards = document.querySelectorAll('.order-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const textData = card.textContent.toLowerCase();
+            const cardStatus = card.getAttribute('data-status');
+            
+            // Cek Tab Menu (Semua / Perlu Dikirim / Dikirim)
+            const matchTab = State.currentTabStatus === 'all' || cardStatus === State.currentTabStatus;
+            
+            // Cek Kolom Pencarian
+            const matchSearch = textData.includes(keyword);
+
+            if (matchTab && matchSearch) {
+                card.style.display = 'flex';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Handle jika tidak ada hasil pencarian/filter
+        const container = document.getElementById('order-list-container');
+        let emptyState = document.getElementById('empty-search');
+        
+        if (visibleCount === 0 && cards.length > 0) {
+            if (!emptyState) {
+                container.insertAdjacentHTML('beforeend', `<div id="empty-search" class="empty-state">Data tidak ditemukan di tab ini.</div>`);
+            }
+        } else if (emptyState) {
+            emptyState.remove();
+        }
+    },
+
+    showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    },
+
+    async handleFormSubmit(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmit');
+        
+        // Mapping status "Masuk" ke API
+        let rawStatus = document.getElementById('status').value;
+        
         const payload = {
             tanggal: document.getElementById('input_tanggal').value,
             id: document.getElementById('id_pesanan').value,
-            namaProduk: namaProduk,
-            warna: warna,
-            ukuran: ukuran,
-            quantity: quantity,
-            status: document.getElementById('status').value,
+            namaProduk: document.getElementById('nama_produk').value.trim(),
+            warna: document.getElementById('warna').value.trim(),
+            ukuran: document.getElementById('ukuran').value,
+            quantity: parseInt(document.getElementById('quantity').value, 10),
+            status: rawStatus,
             platform: document.getElementById('platform').value,
             namaPembeli: document.getElementById('nama_pembeli').value.trim(),
             resi: document.getElementById('resi').value.trim()
         };
 
-        btn.innerText = "Menyimpan..."; btn.disabled = true; alertBox.className = "alert";
+        btn.innerText = "⏳ Menyimpan..."; btn.disabled = true;
         
         try {
-            const res = await fetchWithTimeout(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const res = await API.postData(payload);
+            if (!res.ok) throw new Error('Network error');
             const result = await res.json();
+            
             if(result.status === 'success') {
-                alertBox.innerText = "✅ Berhasil disimpan!";
-                alertBox.className = "alert success";
+                this.showToast('✅ Pesanan berhasil disimpan!', 'success');
                 
-                // SMART RESET: Hanya mengosongkan form detail produk & pembeli
-                document.getElementById('nama_pembeli').value = '';
-                document.getElementById('nama_produk').value = '';
-                document.getElementById('warna').value = '';
-                document.getElementById('ukuran').value = '';
+                // Smart Reset Input
+                ['nama_pembeli', 'nama_produk', 'warna', 'resi'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('ukuran').selectedIndex = 0;
                 document.getElementById('quantity').value = '1';
-                document.getElementById('resi').value = '';
                 
-                generateID();
-                document.getElementById('nama_produk').focus(); // Auto-focus ke input produk untuk item selanjutnya
-                syncData(); 
-            } else throw new Error(result.message || 'Respon server tidak dikenali.');
+                document.getElementById('id_pesanan').value = Utils.generateOrderID();
+                document.getElementById('nama_produk').focus();
+                
+                API.getData(); 
+            } else {
+                throw new Error(result.message || 'Error Server');
+            }
         } catch (error) {
-            const pesan = (error.name === 'AbortError') ? 'Waktu tunggu habis, coba lagi.' : error.message;
-            alertBox.innerText = "❌ Gagal: " + pesan;
-            alertBox.className = "alert error";
+            this.showToast('❌ Gagal menyimpan: ' + error.message, 'error');
         } finally {
-            btn.innerText = "Simpan Data"; btn.disabled = false;
+            btn.innerText = "Simpan Pesanan"; btn.disabled = false;
         }
-    });
-
-    document.getElementById('filterTanggal').addEventListener('change', onDateChange);
-    document.getElementById('searchInput').addEventListener('input', searchTable);
-    document.getElementById('btn-back').addEventListener('click', () => toggleDetails(false));
-    document.getElementById('nav-dashboard').addEventListener('click', () => switchPage('dashboard'));
-    document.getElementById('nav-input').addEventListener('click', () => switchPage('input'));
-
-    const cardTotal = document.getElementById('card-total');
-    cardTotal.addEventListener('click', () => toggleDetails(true));
-    cardTotal.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            toggleDetails(true);
-        }
-    });
-
-    window.onload = () => {
-        syncData();
-        setInterval(syncData, SYNC_INTERVAL_MS); 
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') syncData();
-        });
-
-        window.addEventListener('online', syncData);
-
-        window.addEventListener('offline', () => {
-            document.getElementById('sync-status').innerText = '🔴 Offline — menunggu koneksi...';
-        });
-
-        window.addEventListener('focus', syncData);
-    };
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker berhasil didaftarkan.', reg))
-            .catch(err => console.log('Pendaftaran Service Worker gagal:', err));
-        });
     }
+};
+
+// 6. INITIALIZATION & PWA
+window.addEventListener('DOMContentLoaded', () => {
+    UI.init();
+    API.getData();
+    
+    setInterval(() => API.getData(), Config.SYNC_INTERVAL);
+    
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') API.getData();
+    });
+    
+    window.addEventListener('online', () => {
+        UI.showToast('Koneksi internet pulih. Menyinkronkan...', 'success');
+        API.getData();
+    });
+    window.addEventListener('offline', () => {
+        UI.updateSyncStatus('error');
+    });
+});
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Gagal:', err));
+    });
+}
 </script>
 </body>
 </html>
