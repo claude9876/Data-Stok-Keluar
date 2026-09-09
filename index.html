@@ -13,7 +13,6 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <!-- Library untuk convert HTML ke Gambar -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -21,140 +20,172 @@
         :root {
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --bg-body: #f3f4f6;
+            --success: #059669; 
+            --warning: #d97706; 
+            --bg-body: #f8fafc; 
             --bg-surface: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --radius: 12px;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --text-main: #0f172a; 
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 16px; 
+            --radius-sm: 10px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
 
-        * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        * { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
         [hidden] { display: none !important; }
         
-        body { background-color: var(--bg-body); color: var(--text-main); margin: 0; padding: 0 0 80px 0; }
+        body { 
+            background-color: var(--bg-body); color: var(--text-main); margin: 0; 
+            padding: 0 0 90px 0; line-height: 1.5; -webkit-font-smoothing: antialiased; 
+        }
         
         .container { 
-            max-width: 800px; margin: 20px auto; background: var(--bg-surface); 
-            padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow); 
-            width: 92%; transition: all 0.3s ease;
+            max-width: 800px; margin: 32px auto; background: var(--bg-surface); 
+            padding: 32px; border-radius: var(--radius); box-shadow: var(--shadow); 
+            width: 92%; transition: all 0.3s ease; border: 1px solid var(--border);
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 20px; margin: 20px auto; }
         }
 
-        h1, h2 { text-align: center; margin-top: 0; color: var(--text-main); font-weight: 700; }
+        h1, h2 { text-align: center; margin-top: 0; color: var(--text-main); font-weight: 700; letter-spacing: -0.02em; }
+        h1 { font-size: 1.75rem; margin-bottom: 24px; }
+        h2 { font-size: 1.5rem; }
 
         /* --- 2. LAYOUT & GRID SYSTEM --- */
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         
         /* --- 3. DASHBOARD WIDGETS --- */
-        .filter-section { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .filter-section input { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-weight: bold; font-size: 15px;}
+        .filter-section { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
+        .filter-section input { padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-weight: 600; font-size: 15px; color: var(--text-main); box-shadow: var(--shadow-sm); }
         
-        .sync-status { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 5px;}
+        .sync-status { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;}
         .sync-status.offline { color: #dc2626; }
 
-        .dashboard-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .card-stat { border-radius: var(--radius); padding: 20px; text-align: center; color: white; box-shadow: var(--shadow); transition: transform 0.2s; }
+        .dashboard-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .card-stat { border-radius: var(--radius); padding: 24px 20px; text-align: center; color: white; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(255,255,255,0.1); }
         .card-stat:active { transform: scale(0.98); }
-        .card-stat h3 { margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.9; }
-        .card-stat .angka { font-size: 42px; font-weight: 800; margin-top: 8px; }
+        .card-stat:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+        .card-stat h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; opacity: 0.9; }
+        .card-stat .angka { font-size: 48px; font-weight: 800; margin-top: 12px; line-height: 1; }
         
         .bg-masuk { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .bg-terkirim { background: linear-gradient(135deg, #10b981, #059669); }
         .bg-total { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); grid-column: span 2; cursor: pointer; }
 
-        /* --- 4. TABS & ORDER CARDS DENGAN FOTO PRODUK --- */
-        .detail-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        /* --- 4. TABS & ORDER CARDS --- */
+        .detail-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
         .detail-header h2 { margin: 0; flex: 1; text-align: left; }
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; background: #f1f5f9; padding: 6px; border-radius: 12px; }
         .tab-btn { 
-            flex: 1; min-width: 100px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); 
-            background: white; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.2s; 
+            flex: 1; min-width: 100px; padding: 12px 16px; border-radius: 8px; border: none; 
+            background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 14px;
         }
-        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .tab-btn:hover { color: var(--text-main); }
+        .tab-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow-sm); }
 
-        .search-box { margin-bottom: 15px; }
+        .search-box { margin-bottom: 24px; }
+        .search-box input { padding-left: 40px; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>'); background-repeat: no-repeat; background-position: 14px center; }
         
-        .order-list { display: flex; flex-direction: column; gap: 12px; }
+        .order-list { display: flex; flex-direction: column; gap: 20px; }
         .order-card { 
-            border: 1px solid var(--border); border-radius: 10px; padding: 15px; 
-            background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            display: flex; flex-direction: column; gap: 10px;
+            border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; 
+            background: #fff; box-shadow: var(--shadow-sm);
+            display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .order-card-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px dashed var(--border); padding-bottom: 8px; }
-        .order-card-header .buyer-info { font-size: 15px; color: var(--text-main); }
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-        .badge-platform { background: #e5e7eb; color: #4b5563; margin-right: 5px; }
-        .badge-warning { background: #fef3c7; color: #d97706; }
-        .badge-success { background: #d1fae5; color: #059669; }
+        .order-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
         
-        /* Tombol Download */
-        .btn-download { background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; border-radius: 6px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-download:hover { background: #eff6ff; }
-        .header-actions { display: flex; align-items: center; gap: 8px; }
+        /* PEMBARUAN: ALIGNMENT & PADDING HEADER CARD */
+        .order-card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 4px; gap: 16px; flex-wrap: wrap;}
+        .buyer-info { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 200px;}
+        .resi-title { font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
+        .buyer-name { font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-weight: 500; }
+        
+        .badge { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; white-space: nowrap; }
+        .badge-platform { background: #f1f5f9; color: #475569; }
+        .badge-warning { background: #fef3c7; color: #b45309; }
+        .badge-success { background: #d1fae5; color: #047857; }
+        
+        /* PEMBARUAN: JARAK STATUS & TOMBOL UNDUH */
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .btn-download { background: #f8fafc; border: 1px solid var(--border); cursor: pointer; font-size: 18px; padding: 6px 10px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-download:hover { background: #eff6ff; border-color: #bfdbfe; color: var(--primary); }
 
-        .order-card-body { padding-top: 5px; }
+        .order-card-body { padding-top: 0; }
         
-        /* Desain Baris Item dengan Foto */
         .grouped-item { 
-            padding: 12px 0; border-bottom: 1px dashed #f3f4f6; 
-            display: flex; gap: 12px; align-items: center; 
+            padding: 16px 0; border-bottom: 1px dashed var(--border); 
+            display: flex; gap: 16px; align-items: center; 
         }
         .grouped-item:last-child { border-bottom: none; padding-bottom: 0; }
         .grouped-item-img { 
-            width: 45px; height: 45px; border-radius: 8px; 
-            object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; background: #f9fafb;
+            width: 56px; height: 56px; border-radius: 10px; 
+            object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; background: #f8fafc; box-shadow: var(--shadow-sm);
         }
         .grouped-item-info { flex: 1; }
-        .grouped-item-info .product-name { font-weight: 600; font-size: 14px; color: var(--primary); margin-bottom: 2px; }
-        .grouped-item-info .variant { color: var(--text-muted); font-size: 13px; }
-        .qty-inline { font-weight: bold; color: var(--text-main); background: #f3f4f6; padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+        .grouped-item-info .product-name { font-weight: 600; font-size: 15px; color: var(--text-main); margin-bottom: 4px; }
+        .grouped-item-info .variant { color: var(--text-muted); font-size: 13px; font-weight: 500; }
+        .qty-inline { font-weight: 700; color: var(--text-main); background: #f1f5f9; padding: 6px 12px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); }
         
-        .order-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 13px; border-top: 1px solid var(--border); padding-top: 10px;}
-        .qty-box { background: #eff6ff; color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: bold; border: 1px solid #bfdbfe;}
+        /* PEMBARUAN: FOOTER CARD (Hanya Qty Total, Resi Pindah Ke Atas) */
+        .order-card-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 4px; font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px;}
+        .qty-box { background: #eff6ff; color: var(--primary-hover); padding: 8px 16px; border-radius: 8px; font-weight: 700; border: 1px solid #bfdbfe; font-size: 14px;}
         
-        .empty-state { text-align: center; padding: 30px; color: var(--text-muted); background: #f9fafb; border-radius: 10px; border: 1px dashed var(--border); }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); background: #f8fafc; border-radius: var(--radius); border: 1px dashed #cbd5e1; font-weight: 500; }
 
         /* --- 5. FORMS, INPUTS & CART SYSTEM --- */
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: var(--text-main); }
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; transition: border 0.3s; }
-        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--text-main); }
+        input, select { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; transition: all 0.2s ease; background-color: #f8fafc; color: var(--text-main); }
+        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); background-color: #ffffff; }
+        input::placeholder { color: #94a3b8; }
         
-        .btn { width: 100%; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
-        .btn-primary { background: var(--success); color: white; margin-top: 10px; }
-        .btn-primary:disabled { background: var(--text-muted); cursor: wait; }
-        .btn-secondary { background: #f3f4f6; color: var(--text-main); width: auto; padding: 10px 15px; }
-        .btn-add { background: var(--primary); color: white; border: 1px solid var(--primary-hover); margin-bottom: 20px;}
+        .btn { width: 100%; padding: 16px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s ease; letter-spacing: 0.3px; }
+        .btn-primary { background: var(--success); color: white; margin-top: 12px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
+        .btn-primary:hover { background: #047857; box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); transform: translateY(-1px); }
+        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
+        
+        .btn-secondary { background: #f1f5f9; color: var(--text-main); width: auto; padding: 10px 18px; border: 1px solid var(--border); font-size: 14px; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        
+        .btn-add { background: var(--primary); color: white; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
+        .btn-add:hover { background: var(--primary-hover); box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3); transform: translateY(-1px); }
 
-        .section-divider { border: 0; border-top: 2px dashed var(--border); margin: 20px 0; }
-        .section-title { font-size: 15px; font-weight: bold; color: var(--text-muted); margin-bottom: 15px; text-transform: uppercase; }
+        .section-divider { border: 0; border-top: 2px dashed var(--border); margin: 32px 0; }
+        .section-title { font-size: 14px; font-weight: 700; color: var(--text-muted); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .cart-item { display: flex; gap: 10px; align-items: center; background: #fff; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
-        .cart-item-detail { display: flex; flex-direction: column; flex: 1; }
-        .cart-item-title { font-weight: bold; color: var(--text-main); font-size: 14px;}
-        .cart-item-variant { font-size: 12px; color: var(--text-muted); }
-        .btn-remove { background: #fee2e2; color: #dc2626; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .cart-item { display: flex; gap: 16px; align-items: center; background: #fff; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 12px; box-shadow: var(--shadow-sm); transition: transform 0.2s;}
+        .cart-item:hover { transform: translateX(4px); }
+        .cart-item-detail { display: flex; flex-direction: column; flex: 1; gap: 4px; }
+        .cart-item-title { font-weight: 700; color: var(--text-main); font-size: 15px;}
+        .cart-item-variant { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+        .btn-remove { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
+        .btn-remove:hover { background: #fee2e2; border-color: #fca5a5; }
 
         /* --- 6. TOAST & BOTTOM NAV --- */
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { padding: 12px 20px; border-radius: 8px; color: white; font-weight: 600; box-shadow: var(--shadow); animation: slideIn 0.3s ease-out; }
+        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
+        .toast { padding: 16px 24px; border-radius: 12px; color: white; font-weight: 600; box-shadow: var(--shadow-lg); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); font-size: 14px; }
         .toast.success { background-color: var(--success); }
-        .toast.error { background-color: #dc2626; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.error { background-color: #ef4444; }
+        @keyframes slideIn { from { transform: translateX(100%) scale(0.95); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
 
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface);
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.05); display: flex; z-index: 1000;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.06); display: flex; z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border);
         }
         .nav-item {
-            flex: 1; padding: 12px 0; background: none; border: none; font-size: 12px; font-weight: 600;
-            color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
+            flex: 1; padding: 16px 0; background: none; border: none; font-size: 12px; font-weight: 600;
+            color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;
         }
-        .nav-item span { font-size: 20px; }
+        .nav-item span { font-size: 22px; transition: transform 0.2s; }
+        .nav-item:hover { color: var(--primary); background: #f8fafc; }
+        .nav-item:hover span { transform: translateY(-2px); }
         .nav-item.active { color: var(--primary); background: #eff6ff; border-top: 3px solid var(--primary); }
     </style>
 </head>
@@ -163,7 +194,6 @@
 <div id="toast-container" aria-live="polite"></div>
 
 <main>
-    <!-- HALAMAN 1: DASHBOARD -->
     <section id="page-dashboard" aria-label="Dashboard Utama">
         <div class="container">
             <div id="view-summary">
@@ -192,7 +222,6 @@
                 </div>
             </div>
 
-            <!-- HALAMAN DETAIL -->
             <div id="view-details" hidden>
                 <div class="detail-header">
                     <button type="button" class="btn btn-secondary" id="btn-back">← Kembali</button>
@@ -206,7 +235,7 @@
                 </div>
 
                 <div class="search-box">
-                    <input type="search" id="searchInput" placeholder="🔍 Cari Pembeli, Produk, atau Platform..." autocomplete="off">
+                    <input type="search" id="searchInput" placeholder="Cari Resi, Pembeli, atau Produk..." autocomplete="off">
                 </div>
                 
                 <div id="order-list-container" class="order-list"></div>
@@ -227,8 +256,8 @@
                         <input type="date" id="input_tanggal" required>
                     </div>
                     <div class="form-group">
-                        <label for="id_pesanan">No. Pesanan</label>
-                        <input type="text" id="id_pesanan" placeholder="Ketik No. Pesanan..." required>
+                        <label for="id_pesanan">No. Resi</label>
+                        <input type="text" id="id_pesanan" placeholder="Ketik No. Resi..." required>
                     </div>
                 </div>
 
@@ -244,7 +273,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="nama_pembeli">Nama Pembeli <small>(Opsional)</small></label>
+                        <label for="nama_pembeli">Nama Pembeli <small style="color:var(--text-muted); font-weight:normal;">(Opsional)</small></label>
                         <input type="text" id="nama_pembeli" placeholder="Nama / Username">
                     </div>
                 </div>
@@ -300,7 +329,6 @@
                 <button type="submit" id="btnAddToCart" class="btn btn-add">➕ Tambah ke Daftar Variasi</button>
             </form>
             
-            <!-- AREA KERANJANG (CART) -->
             <div id="cart-area" hidden>
                 <div class="section-title" style="color: var(--primary);">Daftar Barang (Akan Disimpan)</div>
                 <div id="cart-list" style="margin-bottom: 20px;"></div>
@@ -354,11 +382,9 @@ const Utils = {
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     },
     
-    // 🔥 SISTEM FOTO PRODUK OTOMATIS BERDASARKAN WARNA
     getProductImage: (produk, warna) => {
         let w = (warna || '').toLowerCase();
         
-        // 1. DAFTAR LINK FOTO ASLI 
         const fotoReal = {
             "hitam": "https://down-id.img.susercontent.com/file/id-11134207-81zte-msjtzri73oxt92@resize_w1080_nl.webp",
             "putih": "https://down-id.img.susercontent.com/file/id-11134207-81ztp-msjtzri4err6bf@resize_w1080_nl.webp",
@@ -373,9 +399,8 @@ const Utils = {
             if (w.includes(keyColor)) return urlFoto;
         }
 
-        // 2. JIKA WARNA LAIN, BUAT KOTAK WARNA STANDAR OTOMATIS
-        let bgHex = "e5e7eb"; 
-        let txtHex = "374151";
+        let bgHex = "e2e8f0"; 
+        let txtHex = "334155";
 
         if (w.includes('navy') || w.includes('biru')) { bgHex = "1e3a8a"; txtHex = "ffffff"; }
         else if (w.includes('cream') || w.includes('krem')) { bgHex = "fef3c7"; txtHex = "92400e"; }
@@ -520,7 +545,6 @@ const UI = {
         }
     },
 
-    // RENDER DASHBOARD
     renderDashboard() {
         let totalQty = 0;
         let countMasuk = 0;
@@ -529,7 +553,6 @@ const UI = {
 
         const groupedOrders = {};
 
-        // Pengelompokan Data
         State.allData.forEach(row => {
             if (!row['Tanggal']) return;
             const rawDate = String(row['Tanggal']);
@@ -545,9 +568,9 @@ const UI = {
                 
                 if (!groupedOrders[id]) {
                     groupedOrders[id] = {
-                        id: id,
+                        id: Utils.escapeHTML(row['ID'] || '-'),
                         platform: Utils.escapeHTML(row['Platform'] || '-'),
-                        pembeli: Utils.escapeHTML(row['Nama Pembeli'] || row['ID'] || 'Tanpa Nama'),
+                        pembeli: Utils.escapeHTML(row['Nama Pembeli'] || 'Tanpa Nama'), // Memisahkan Resi & Nama
                         statusText: isTerkirim ? 'terkirim' : 'masuk',
                         isTerkirim: isTerkirim,
                         items: [],
@@ -566,7 +589,6 @@ const UI = {
             }
         });
 
-        // Merender Data
         Object.values(groupedOrders).forEach(order => {
             if (order.isTerkirim) countTerkirim++;
             else countMasuk++;
@@ -584,21 +606,28 @@ const UI = {
                     <img src="${imgURL}" alt="${item.warna}" class="grouped-item-img" loading="lazy" crossorigin="anonymous">
                     <div class="grouped-item-info">
                         <div class="product-name">${item.produk}</div>
-                        <div class="variant">Warna: ${item.warna} | Ukuran: ${item.ukuran}</div>
+                        <div class="variant">Warna: ${item.warna} &nbsp;|&nbsp; Ukuran: ${item.ukuran}</div>
                     </div>
                     <div class="qty-inline">x${item.qty}</div>
                 </div>`;
             });
 
+            // Menerapkan UI Baru dengan jarak presisi
             listHTML += `
             <div class="order-card" data-status="${order.statusText}">
                 <div class="order-card-header">
                     <div class="buyer-info">
-                        <span class="badge badge-platform">${order.platform}</span>
-                        <strong>${order.pembeli}</strong>
+                        <div class="resi-title">
+                            <span class="badge badge-platform">${order.platform}</span>
+                            No. Resi: ${order.id}
+                        </div>
+                        <div class="buyer-name">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                            ${order.pembeli}
+                        </div>
                     </div>
                     <div class="header-actions">
-                        <div>${badgeStatus}</div>
+                        ${badgeStatus}
                         <button type="button" class="btn-download" onclick="UI.downloadCard('${order.id}', this)" title="Unduh Gambar Pesanan">📥</button>
                     </div>
                 </div>
@@ -609,7 +638,6 @@ const UI = {
                 
                 <div class="order-card-footer">
                     <span class="qty-box">Total Qty: ${order.totalOrderQty} pcs</span>
-                    <span class="resi-box" style="font-size: 11px;">No. Pesanan: ${order.id}</span>
                 </div>
             </div>`;
         });
@@ -657,12 +685,10 @@ const UI = {
         }
     },
 
-    // FUNGSI UNDUH KARTU PESANAN MENJADI GAMBAR
     async downloadCard(orderId, btnElement) {
         const card = btnElement.closest('.order-card');
         if (!card) return;
 
-        // Sembunyikan tombol unduh sementara agar tidak ikut terfoto
         const originalDisplay = btnElement.style.display;
         btnElement.style.display = 'none';
         
@@ -688,7 +714,6 @@ const UI = {
             console.error('Error generating image:', error);
             this.showToast('Gagal mengunduh gambar', 'error');
         } finally {
-            // Kembalikan tombol unduh seperti semula
             btnElement.style.display = originalDisplay;
         }
     },
@@ -702,7 +727,7 @@ const UI = {
         container.appendChild(toast);
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
+            toast.style.transform = 'translateX(100%) scale(0.95)';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     },
@@ -746,7 +771,7 @@ const UI = {
             
             cartList.innerHTML += `
                 <div class="cart-item">
-                    <img src="${imgURL}" alt="${item.warna}" style="width:40px; height:40px; border-radius:6px; object-fit:cover; border:1px solid #e5e7eb;">
+                    <img src="${imgURL}" alt="${item.warna}" style="width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
                     <div class="cart-item-detail">
                         <div class="cart-item-title">${item.namaProduk}</div>
                         <div class="cart-item-variant">${item.warna} - Ukuran ${item.ukuran} (Qty: ${item.quantity})</div>
