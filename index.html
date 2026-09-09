@@ -13,6 +13,8 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- Library untuk convert HTML ke Gambar -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         /* --- 1. CSS VARIABLES & BASE SETUP --- */
@@ -89,6 +91,11 @@
         .badge-warning { background: #fef3c7; color: #d97706; }
         .badge-success { background: #d1fae5; color: #059669; }
         
+        /* Tombol Download */
+        .btn-download { background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; border-radius: 6px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-download:hover { background: #eff6ff; }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+
         .order-card-body { padding-top: 5px; }
         
         /* Desain Baris Item dengan Foto */
@@ -108,8 +115,7 @@
         
         .order-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 13px; border-top: 1px solid var(--border); padding-top: 10px;}
         .qty-box { background: #eff6ff; color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: bold; border: 1px solid #bfdbfe;}
-        .resi-box { color: var(--text-muted); font-family: monospace; font-weight: bold;}
-
+        
         .empty-state { text-align: center; padding: 30px; color: var(--text-muted); background: #f9fafb; border-radius: 10px; border: 1px dashed var(--border); }
 
         /* --- 5. FORMS, INPUTS & CART SYSTEM --- */
@@ -117,8 +123,7 @@
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: var(--text-main); }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; transition: border 0.3s; }
         input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        input[readonly] { background-color: #f9fafb; cursor: not-allowed; font-weight: 600; color: var(--primary); }
-
+        
         .btn { width: 100%; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
         .btn-primary { background: var(--success); color: white; margin-top: 10px; }
         .btn-primary:disabled { background: var(--text-muted); cursor: wait; }
@@ -222,8 +227,8 @@
                         <input type="date" id="input_tanggal" required>
                     </div>
                     <div class="form-group">
-                        <label for="id_pesanan">ID Pesanan (Otomatis & Sama)</label>
-                        <input type="text" id="id_pesanan" required readonly>
+                        <label for="id_pesanan">No. Pesanan</label>
+                        <input type="text" id="id_pesanan" placeholder="Ketik No. Pesanan..." required>
                     </div>
                 </div>
 
@@ -244,18 +249,12 @@
                     </div>
                 </div>
 
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="status">Status Pemrosesan</label>
-                        <select id="status" required>
-                            <option value="Masuk">Perlu Dikirim (Masuk)</option>
-                            <option value="Terkirim">Dikirim (Selesai)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="resi">Nomor Resi <small>(Opsional)</small></label>
-                        <input type="text" id="resi" placeholder="Input resi pengiriman">
-                    </div>
+                <div class="form-group">
+                    <label for="status">Status Pemrosesan</label>
+                    <select id="status" required>
+                        <option value="Masuk">Perlu Dikirim (Masuk)</option>
+                        <option value="Terkirim">Dikirim (Selesai)</option>
+                    </select>
                 </div>
 
                 <hr class="section-divider">
@@ -354,15 +353,12 @@ const Utils = {
         const d = new Date();
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     },
-    generateOrderID: () => {
-        return 'INV-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-    },
     
     // 🔥 SISTEM FOTO PRODUK OTOMATIS BERDASARKAN WARNA
     getProductImage: (produk, warna) => {
         let w = (warna || '').toLowerCase();
         
-        // 1. DAFTAR LINK FOTO ASLI (Otomatis menyesuaikan warna apapun produknya)
+        // 1. DAFTAR LINK FOTO ASLI 
         const fotoReal = {
             "hitam": "https://down-id.img.susercontent.com/file/id-11134207-81zte-msjtzri73oxt92@resize_w1080_nl.webp",
             "putih": "https://down-id.img.susercontent.com/file/id-11134207-81ztp-msjtzri4err6bf@resize_w1080_nl.webp",
@@ -370,17 +366,14 @@ const Utils = {
             "cokelat": "https://down-id.img.susercontent.com/file/id-11134207-81ztk-msjtzri4hkw255@resize_w1080_nl.webp",
             "kuning": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
             "soft blue": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp",
-            "ungu": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp" // Disamakan dengan soft blue
+            "ungu": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp" 
         };
 
-        // Cek apakah input warna dari pengguna cocok dengan daftar foto di atas
         for (const [keyColor, urlFoto] of Object.entries(fotoReal)) {
-            if (w.includes(keyColor)) {
-                return urlFoto;
-            }
+            if (w.includes(keyColor)) return urlFoto;
         }
 
-        // 2. JIKA WARNA LAIN DIINPUT, BUAT KOTAK WARNA STANDAR OTOMATIS
+        // 2. JIKA WARNA LAIN, BUAT KOTAK WARNA STANDAR OTOMATIS
         let bgHex = "e5e7eb"; 
         let txtHex = "374151";
 
@@ -454,7 +447,6 @@ const UI = {
         State.selectedDate = Utils.getToday();
         document.getElementById('filterTanggal').value = State.selectedDate;
         document.getElementById('input_tanggal').value = State.selectedDate;
-        document.getElementById('id_pesanan').value = Utils.generateOrderID();
         
         this.bindEvents();
     },
@@ -498,10 +490,6 @@ const UI = {
 
         if (isDash) {
             API.getData();
-        } else {
-            if(State.cart.length === 0) {
-                document.getElementById('id_pesanan').value = Utils.generateOrderID();
-            }
         }
     },
 
@@ -532,7 +520,7 @@ const UI = {
         }
     },
 
-    // RENDER DASHBOARD (Mengelompokkan ID & Menampilkan Foto Asli)
+    // RENDER DASHBOARD
     renderDashboard() {
         let totalQty = 0;
         let countMasuk = 0;
@@ -562,7 +550,6 @@ const UI = {
                         pembeli: Utils.escapeHTML(row['Nama Pembeli'] || row['ID'] || 'Tanpa Nama'),
                         statusText: isTerkirim ? 'terkirim' : 'masuk',
                         isTerkirim: isTerkirim,
-                        resi: Utils.escapeHTML(row['Resi'] || ''),
                         items: [],
                         totalOrderQty: 0
                     };
@@ -579,7 +566,7 @@ const UI = {
             }
         });
 
-        // Merender Data dengan Foto
+        // Merender Data
         Object.values(groupedOrders).forEach(order => {
             if (order.isTerkirim) countTerkirim++;
             else countMasuk++;
@@ -590,11 +577,11 @@ const UI = {
             
             let itemsHTML = '';
             order.items.forEach(item => {
-                const imgURL = Utils.getProductImage(item.produk, item.warna); // Ambil link foto sesuai warna
+                const imgURL = Utils.getProductImage(item.produk, item.warna); 
                 
                 itemsHTML += `
                 <div class="grouped-item">
-                    <img src="${imgURL}" alt="${item.warna}" class="grouped-item-img" loading="lazy">
+                    <img src="${imgURL}" alt="${item.warna}" class="grouped-item-img" loading="lazy" crossorigin="anonymous">
                     <div class="grouped-item-info">
                         <div class="product-name">${item.produk}</div>
                         <div class="variant">Warna: ${item.warna} | Ukuran: ${item.ukuran}</div>
@@ -610,7 +597,10 @@ const UI = {
                         <span class="badge badge-platform">${order.platform}</span>
                         <strong>${order.pembeli}</strong>
                     </div>
-                    <div>${badgeStatus}</div>
+                    <div class="header-actions">
+                        <div>${badgeStatus}</div>
+                        <button type="button" class="btn-download" onclick="UI.downloadCard('${order.id}', this)" title="Unduh Gambar Pesanan">📥</button>
+                    </div>
                 </div>
                 
                 <div class="order-card-body">
@@ -619,7 +609,7 @@ const UI = {
                 
                 <div class="order-card-footer">
                     <span class="qty-box">Total Qty: ${order.totalOrderQty} pcs</span>
-                    ${order.resi ? `<span class="resi-box">Resi: ${order.resi}</span>` : ''}
+                    <span class="resi-box" style="font-size: 11px;">No. Pesanan: ${order.id}</span>
                 </div>
             </div>`;
         });
@@ -664,6 +654,42 @@ const UI = {
             }
         } else if (emptyState) {
             emptyState.remove();
+        }
+    },
+
+    // FUNGSI UNDUH KARTU PESANAN MENJADI GAMBAR
+    async downloadCard(orderId, btnElement) {
+        const card = btnElement.closest('.order-card');
+        if (!card) return;
+
+        // Sembunyikan tombol unduh sementara agar tidak ikut terfoto
+        const originalDisplay = btnElement.style.display;
+        btnElement.style.display = 'none';
+        
+        this.showToast('Memproses gambar...', 'success');
+
+        try {
+            if (typeof html2canvas === 'undefined') {
+                throw new Error("Library pembuat gambar gagal dimuat.");
+            }
+
+            const canvas = await html2canvas(card, {
+                scale: 2, 
+                backgroundColor: '#ffffff',
+                useCORS: true 
+            });
+
+            const link = document.createElement('a');
+            link.download = `Pesanan-${orderId}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+        } catch (error) {
+            console.error('Error generating image:', error);
+            this.showToast('Gagal mengunduh gambar', 'error');
+        } finally {
+            // Kembalikan tombol unduh seperti semula
+            btnElement.style.display = originalDisplay;
         }
     },
 
@@ -746,11 +772,10 @@ const UI = {
         
         const commonData = {
             tanggal: document.getElementById('input_tanggal').value,
-            id: document.getElementById('id_pesanan').value,
+            id: document.getElementById('id_pesanan').value.trim(),
             status: document.getElementById('status').value,
             platform: document.getElementById('platform').value,
-            namaPembeli: document.getElementById('nama_pembeli').value.trim(),
-            resi: document.getElementById('resi').value.trim()
+            namaPembeli: document.getElementById('nama_pembeli').value.trim()
         };
 
         btn.innerText = "⏳ Memproses Transaksi..."; 
@@ -790,11 +815,10 @@ const UI = {
             this.renderCartUI();
             
             document.getElementById('nama_pembeli').value = '';
-            document.getElementById('resi').value = '';
+            document.getElementById('id_pesanan').value = '';
             document.getElementById('nama_produk').value = '';
-            document.getElementById('id_pesanan').value = Utils.generateOrderID();
             
-            document.getElementById('nama_pembeli').focus();
+            document.getElementById('id_pesanan').focus();
             
             API.getData(); 
         } else {
