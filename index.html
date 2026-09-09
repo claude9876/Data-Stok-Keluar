@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Pesanan Harian</title>
+
+    <!-- ===== PWA: manifest, theme color, ikon ===== -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Pesanan Harian">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <!-- Library PapaParse sebagai cadangan (fallback) jika Apps Script mereturn format CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
@@ -41,6 +53,15 @@
             font-family: inherit;
         }
 
+        /* Indikator status sinkronisasi otomatis */
+        .sync-status {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 10px;
+            min-height: 16px;
+        }
+
         /* Tampilan Dashboard */
         #dashboard-view { 
             display: flex; 
@@ -48,6 +69,38 @@
             align-items: center; 
             padding: 20px 0 40px 0; 
         }
+
+        /* Dua kotak ringkasan status: Pesanan Masuk & Terkirim */
+        .mini-cards {
+            display: flex;
+            gap: 15px;
+            width: 80%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+        .mini-card {
+            flex: 1;
+            border-radius: 12px;
+            padding: 18px 10px;
+            text-align: center;
+            color: white;
+        }
+        .mini-card h3 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0.95;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .mini-card .mini-number {
+            font-size: 38px;
+            font-weight: bold;
+            margin-top: 6px;
+        }
+        .mini-card-masuk { background: #f59e0b; box-shadow: 0 6px 10px -3px rgba(245,158,11,0.4); }
+        .mini-card-terkirim { background: #10b981; box-shadow: 0 6px 10px -3px rgba(16,185,129,0.4); }
+
         .card { 
             background: #3b82f6; 
             color: white; 
@@ -91,6 +144,25 @@
         tr:hover { background-color: #f3f4f6; }
         
         #loading-msg { text-align: center; color: #6b7280; font-style: italic; }
+
+        /* Tombol install PWA (mengambang) */
+        #install-btn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1f2937;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+            cursor: pointer;
+            z-index: 999;
+        }
+        #install-btn:hover { background: #111827; }
     </style>
 </head>
 <body>
@@ -100,13 +172,27 @@
     <!-- Bagian Filter Tanggal (Berlaku untuk Dashboard dan Tabel) -->
     <div class="date-filter">
         <label for="filterTanggal">Pesanan Tanggal:</label>
-        <input type="date" id="filterTanggal" onchange="filterAndDisplay()">
+        <input type="date" id="filterTanggal" onchange="onDateChange()">
     </div>
+    <div class="sync-status" id="sync-status"></div>
 
     <div id="loading-msg">Sedang mengambil data dari server, mohon tunggu...</div>
 
     <!-- View 1: Dashboard Utama -->
     <div id="dashboard-view" style="display: none;">
+
+        <!-- Ringkasan status pesanan -->
+        <div class="mini-cards">
+            <div class="mini-card mini-card-masuk">
+                <h3>Pesanan Masuk</h3>
+                <div class="mini-number" id="masuk-angka">0</div>
+            </div>
+            <div class="mini-card mini-card-terkirim">
+                <h3>Terkirim</h3>
+                <div class="mini-number" id="terkirim-angka">0</div>
+            </div>
+        </div>
+
         <div class="card" onclick="toggleView('details-view')">
             <h2>Total Produk Dipesan</h2>
             <div class="number" id="total-angka">0</div>
@@ -145,12 +231,23 @@
     </div>
 </div>
 
+<button id="install-btn">📲 Install Aplikasi</button>
+
 <script>
     // URL API Google Apps Script Baru Anda
     const apiUrl = 'https://script.google.com/macros/s/AKfycbx4_xHRW7goOgIqqOUsrGyhr63rgXvY5biiWzOOZ_vbYnHmtn5BNBAIfDfj7GmXUnsu/exec';
+
+    // Seberapa sering dashboard mengecek pembaruan data secara otomatis (ms)
+    const SYNC_INTERVAL_MS = 30000; // 30 detik
+
+    // Nama kolom & nilai yang dianggap sebagai "Terkirim". Kolom lain otomatis dihitung "Masuk".
+    // Sesuaikan bagian ini jika nama kolom status di spreadsheet Anda berbeda.
+    const STATUS_FIELD = 'Status';
+    const TERKIRIM_KEYWORDS = ['terkirim', 'kirim', 'sent', 'selesai'];
     
-    // Variabel untuk menyimpan semua data mentah dari Spreadsheet
+    // Variabel untuk menyimpan semua data mentah dari Spreadsheet (bertindak sebagai cache di memori)
     let allData = [];
+    let syncTimer = null;
 
     // Fungsi otomatis mendapatkan format tanggal hari ini (YYYY-MM-DD)
     function getTodayDate() {
@@ -164,38 +261,95 @@
     // Set kalender default ke hari ini
     document.getElementById('filterTanggal').value = getTodayDate();
 
-    // Fungsi mengambil data dari Apps Script
-    async function fetchData() {
+    // Fungsi mengambil data terbaru dari Apps Script.
+    // isInitial=true  -> pemuatan pertama kali (boleh menampilkan pesan loading/error)
+    // isInitial=false -> sinkronisasi latar belakang (TIDAK PERNAH menghapus data yang sudah tampil,
+    //                     kalau gagal cukup dicatat di console dan cache lama tetap dipakai)
+    async function syncData(isInitial) {
         try {
-            const response = await fetch(apiUrl);
+            // cache: 'no-store' memastikan kita selalu ambil data terbaru dari server, bukan dari cache browser
+            const response = await fetch(apiUrl, { cache: 'no-store' });
             const text = await response.text();
-            
+
+            let newData;
             // Mencoba mendeteksi jika response JSON atau CSV
             try {
                 let json = JSON.parse(text);
-                // Menyesuaikan dengan format output JSON standar (array atau dalam object data)
-                allData = Array.isArray(json) ? json : (json.data || []);
+                newData = Array.isArray(json) ? json : (json.data || []);
             } catch (e) {
                 // Jika error parse JSON, asumsikan output berupa CSV
-                allData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+                newData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
             }
 
-            // Sembunyikan pesan loading
-            document.getElementById('loading-msg').style.display = 'none';
-            document.getElementById('dashboard-view').style.display = 'flex';
-            
-            // Tampilkan data yang sudah difilter
-            filterAndDisplay();
+            // Baru timpa cache setelah data baru berhasil didapat & diparse
+            allData = newData;
+
+            if (isInitial) {
+                document.getElementById('loading-msg').style.display = 'none';
+                document.getElementById('dashboard-view').style.display = 'flex';
+            }
+
+            // Saat sinkron latar belakang, filter tanggal & pencarian yang sedang aktif tetap dipertahankan
+            filterAndDisplay(isInitial);
+            setSyncStatus('Tersinkron ' + new Date().toLocaleTimeString('id-ID'));
 
         } catch (error) {
-            console.error("Gagal memuat:", error);
-            document.getElementById('loading-msg').innerText = "Gagal mengambil data. Pastikan API Apps Script berjalan normal.";
-            document.getElementById('loading-msg').style.color = "red";
+            console.error('Gagal sinkronisasi:', error);
+            if (isInitial) {
+                document.getElementById('loading-msg').innerText = 'Gagal mengambil data. Pastikan API Apps Script berjalan normal.';
+                document.getElementById('loading-msg').style.color = 'red';
+            } else {
+                // Sinkron berkala gagal -> biarkan data/cache yang sudah tampil, jangan dihapus
+                setSyncStatus('Sinkron gagal, menampilkan data terakhir');
+            }
         }
     }
 
+    function setSyncStatus(msg) {
+        const el = document.getElementById('sync-status');
+        if (el) el.innerText = msg;
+    }
+
+    // Menjalankan sinkronisasi otomatis berkala
+    function startAutoSync() {
+        if (syncTimer) clearInterval(syncTimer);
+        syncTimer = setInterval(() => syncData(false), SYNC_INTERVAL_MS);
+    }
+
+    // Saat tab dibuka/aktif kembali, langsung sinkron (selain menunggu interval berkala)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            syncData(false);
+        }
+    });
+
+    // Dipanggil saat user mengganti tanggal secara manual -> wajar untuk reset pencarian
+    function onDateChange() {
+        filterAndDisplay(true);
+    }
+
+    // Menghitung ringkasan status pesanan (Masuk vs Terkirim) berdasarkan ID Pesanan unik
+    function computeStatusSummary(data) {
+        const idsMasuk = new Set();
+        const idsTerkirim = new Set();
+
+        data.forEach(row => {
+            const rawStatus = (row[STATUS_FIELD] || '').toString().trim().toLowerCase();
+            const id = row['ID'] || JSON.stringify(row);
+            const isTerkirim = TERKIRIM_KEYWORDS.some(k => rawStatus.includes(k));
+            if (isTerkirim) {
+                idsTerkirim.add(id);
+            } else {
+                idsMasuk.add(id);
+            }
+        });
+
+        return { masuk: idsMasuk.size, terkirim: idsTerkirim.size };
+    }
+
     // Fungsi menyaring (filter) data sesuai tanggal kalender yang dipilih
-    function filterAndDisplay() {
+    // resetSearch=true saat ganti tanggal manual, false saat sinkron otomatis (agar pencarian tidak hilang)
+    function filterAndDisplay(resetSearch) {
         const selectedDate = document.getElementById('filterTanggal').value; // format YYYY-MM-DD
         let totalQuantity = 0;
         let tableHTML = '';
@@ -239,12 +393,18 @@
             `;
         });
 
+        // Update kotak ringkasan Pesanan Masuk & Terkirim
+        const statusSummary = computeStatusSummary(filteredData);
+        document.getElementById('masuk-angka').innerText = statusSummary.masuk;
+        document.getElementById('terkirim-angka').innerText = statusSummary.terkirim;
+
         // Update ke HTML
         document.getElementById('total-angka').innerText = totalQuantity;
         document.getElementById('table-body').innerHTML = tableHTML || `<tr><td colspan="5" style="text-align:center;">Tidak ada pesanan pada tanggal ${selectedDate}</td></tr>`;
         
-        // Reset kolom pencarian saat ganti tanggal
-        document.getElementById('searchInput').value = '';
+        if (resetSearch) {
+            document.getElementById('searchInput').value = '';
+        }
         searchTable();
     }
 
@@ -282,8 +442,41 @@
         }
     }
 
-    // Jalankan saat web dimuat
-    window.onload = fetchData;
+    // ===== PWA: registrasi Service Worker =====
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .catch(err => console.error('Gagal daftar service worker:', err));
+        });
+    }
+
+    // ===== PWA: tombol Install kustom =====
+    let deferredInstallPrompt = null;
+    const installBtn = document.getElementById('install-btn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        installBtn.style.display = 'block';
+    });
+
+    installBtn.addEventListener('click', async () => {
+        if (!deferredInstallPrompt) return;
+        installBtn.style.display = 'none';
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+        installBtn.style.display = 'none';
+        deferredInstallPrompt = null;
+    });
+
+    // Jalankan saat web dimuat: ambil data awal, lalu mulai sinkron otomatis berkala
+    window.onload = function() {
+        syncData(true).then(startAutoSync);
+    };
 </script>
 </body>
 </html>
