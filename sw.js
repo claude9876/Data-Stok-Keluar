@@ -3,9 +3,9 @@
 // TAPI TIDAK PERNAH meng-cache data dari Google Apps Script, supaya dashboard
 // tetap menampilkan data pesanan terbaru (real-time), bukan data basi.
 
-const CACHE_NAME = 'pesanan-dashboard-v1';
+const CACHE_NAME = 'pesanan-dashboard-v2';
 const APP_SHELL = [
-  './dashboard.html',
+  './index.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
