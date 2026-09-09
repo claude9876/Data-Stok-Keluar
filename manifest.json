@@ -2,7 +2,7 @@
   "name": "Dashboard Pesanan Harian",
   "short_name": "Pesanan Harian",
   "description": "Dashboard pemantauan pesanan harian dengan sinkronisasi otomatis dari Google Sheets",
-  "start_url": "./dashboard.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
