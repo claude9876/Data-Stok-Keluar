@@ -3,274 +3,287 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Resi Marketplace</title>
-    <!-- Library Scanner -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- Library OCR (Baca Teks dari Foto) -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <title>Dashboard Pesanan Harian</title>
+    <!-- Library PapaParse sebagai cadangan (fallback) jika Apps Script mereturn format CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f5f6;
-            margin: 0; padding: 15px;
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f3f4f6; 
+            margin: 0; 
+            padding: 20px; 
         }
-        .container {
-            max-width: 450px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
         }
-        h2 { text-align: center; color: #333; margin-top: 0; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 15px; }
-        label { font-size: 14px; color: #555; font-weight: bold; margin-bottom: 5px; display: block; }
-        input {
-            width: 100%; padding: 12px; margin-bottom: 15px;
-            border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;
-            font-size: 15px;
+        h1 { text-align: center; color: #1f2937; }
+        
+        /* Filter Tanggal di Dashboard */
+        .date-filter {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            font-weight: bold;
+            color: #4b5563;
         }
-        input:focus { border-color: #ee4d2d; outline: none; }
-        button {
-            width: 100%; padding: 14px; background: #ee4d2d; color: white;
-            border: none; border-radius: 6px; font-size: 16px; font-weight: bold;
-            cursor: pointer;
+        .date-filter input {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 16px;
+            font-family: inherit;
         }
-        button:disabled { background: #aaa; }
-        #msg { text-align: center; font-weight: bold; margin-top: 10px; }
 
-        .input-row { display: flex; gap: 8px; margin-bottom: 15px; }
-        .input-row input { margin-bottom: 0; }
-        .btn-icon {
-            width: 48px; flex-shrink: 0; padding: 0; background: #2d7fee;
-            border: none; border-radius: 6px; color: white; font-size: 18px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        /* Tampilan Dashboard */
+        #dashboard-view { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px 0 40px 0; 
         }
-        .btn-icon:disabled { background: #aaa; }
-        .ocr-hint { font-size: 12px; color: #888; margin: -10px 0 15px; }
-        #ocr-results { margin: -10px 0 15px; display: flex; flex-wrap: wrap; gap: 6px; }
-        .ocr-chip {
-            background: #eef2ff; color: #333; border: 1px solid #d7ddf5;
-            border-radius: 15px; padding: 5px 10px; font-size: 12px;
-            cursor: pointer; max-width: 100%; overflow: hidden;
-            text-overflow: ellipsis; white-space: nowrap;
+        .card { 
+            background: #3b82f6; 
+            color: white; 
+            padding: 30px 60px; 
+            border-radius: 16px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.2s ease-in-out; 
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4); 
+            width: 80%;
+            max-width: 400px;
         }
-        .ocr-chip:active { background: #dde4ff; }
+        .card:hover { transform: translateY(-5px); background: #2563eb; }
+        .card h2 { margin: 0; font-size: 20px; font-weight: 500; }
+        .card .number { font-size: 72px; font-weight: bold; margin-top: 10px; }
+        
+        /* Tampilan Rincian */
+        #details-view { display: none; }
+        .details-header { display: flex; align-items: center; margin-bottom: 20px; }
+        .btn-back { 
+            background: #6b7280; color: white; border: none; padding: 10px 20px; 
+            border-radius: 8px; cursor: pointer; font-size: 15px; margin-right: 20px;
+        }
+        .btn-back:hover { background: #4b5563; }
+        .details-header h1 { margin: 0; font-size: 22px; }
+
+        /* Fitur Pencarian Rincian */
+        .search-container { margin-bottom: 15px; }
+        #searchInput {
+            width: 100%; padding: 12px 15px; border: 1px solid #d1d5db;
+            border-radius: 8px; font-size: 15px; box-sizing: border-box;
+        }
+        #searchInput:focus { outline: none; border-color: #3b82f6; }
+        
+        /* Desain Tabel */
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { border: 1px solid #e5e7eb; padding: 14px; text-align: left; }
+        th { background-color: #f9fafb; font-weight: 600; color: #374151; }
+        tr:nth-child(even) { background-color: #f9fafb; }
+        tr:hover { background-color: #f3f4f6; }
+        
+        #loading-msg { text-align: center; color: #6b7280; font-style: italic; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Scanner Resi</h2>
-    <div id="reader"></div>
     
-    <form id="form-data">
-        <label>Nomor Resi (Otomatis dari Scanner)</label>
-        <input type="text" id="resi" placeholder="Arahkan kamera ke barcode resi..." required>
-        
-        <label>Nama SKU</label>
-        <div class="input-row">
-            <input type="text" id="sku" placeholder="Contoh: Diora Pants" required>
-            <button type="button" id="btn-ocr" class="btn-icon" title="Foto label untuk baca teks otomatis">📷</button>
+    <!-- Bagian Filter Tanggal (Berlaku untuk Dashboard dan Tabel) -->
+    <div class="date-filter">
+        <label for="filterTanggal">Pesanan Tanggal:</label>
+        <input type="date" id="filterTanggal" onchange="filterAndDisplay()">
+    </div>
+
+    <div id="loading-msg">Sedang mengambil data dari server, mohon tunggu...</div>
+
+    <!-- View 1: Dashboard Utama -->
+    <div id="dashboard-view" style="display: none;">
+        <div class="card" onclick="toggleView('details-view')">
+            <h2>Total Produk Dipesan</h2>
+            <div class="number" id="total-angka">0</div>
+            <p style="margin-top:10px; font-size:14px; opacity:0.9;">Klik untuk melihat rincian variasi</p>
         </div>
-        <input type="file" id="ocr-file" accept="image/*" capture="environment" style="display:none;">
-        <p class="ocr-hint">Tombol kamera: foto label produk, nama SKU akan dibaca otomatis (OCR).</p>
-        <div id="ocr-results"></div>
+    </div>
+
+    <!-- View 2: Tabel Rincian -->
+    <div id="details-view">
+        <div class="details-header">
+            <button class="btn-back" onclick="toggleView('dashboard-view')">← Kembali</button>
+            <h1>Rincian Pesanan</h1>
+        </div>
         
-        <label>Variasi (Warna/Ukuran)</label>
-        <input type="text" id="variasi" placeholder="Contoh: Hitam L" required>
-        
-        <label>Quantity</label>
-        <input type="number" id="qty" value="1" required>
-        
-        <button type="submit" id="btn-submit">Simpan ke Spreadsheet</button>
-    </form>
-    <p id="msg"></p>
+        <!-- Kolom Pencarian -->
+        <div class="search-container">
+            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Cari berdasarkan Nama Produk atau Ukuran...">
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>ID Pesanan</th>
+                        <th>Nama Produk</th>
+                        <th>Ukuran</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Baris tabel masuk via Javascript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
-    // ⚠️ GANTI URL DI BAWAH INI DENGAN URL DARI GOOGLE APPS SCRIPT ANDA ⚠️
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4_xHRW7goOgIqqOUsrGyhr63rgXvY5biiWzOOZ_vbYnHmtn5BNBAIfDfj7GmXUnsu/exec';
+    // URL API Google Apps Script Baru Anda
+    const apiUrl = 'https://script.google.com/macros/s/AKfycbx4_xHRW7goOgIqqOUsrGyhr63rgXvY5biiWzOOZ_vbYnHmtn5BNBAIfDfj7GmXUnsu/exec';
+    
+    // Variabel untuk menyimpan semua data mentah dari Spreadsheet
+    let allData = [];
 
-    // Inisialisasi Scanner
-    const html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 100 } };
-
-    // Jika barcode berhasil discan
-    function onScanSuccess(decodedText) {
-        // Hentikan scanner sementara agar tidak dobel scan
-        html5QrCode.stop().then(() => {
-            // Masukkan hasil scan ke kolom No Resi
-            document.getElementById('resi').value = decodedText;
-            document.getElementById('msg').innerText = "Resi terbaca! Silakan isi SKU & Variasi.";
-            document.getElementById('msg').style.color = "blue";
-            
-            // Pindahkan kursor otomatis ke kolom SKU
-            document.getElementById('sku').focus();
-        });
+    // Fungsi otomatis mendapatkan format tanggal hari ini (YYYY-MM-DD)
+    function getTodayDate() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
     }
 
-    // Mulai kamera belakang
-    html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-    .catch(err => {
-        document.getElementById('msg').innerText = "Kamera tidak dapat diakses.";
-        document.getElementById('msg').style.color = "red";
-    });
+    // Set kalender default ke hari ini
+    document.getElementById('filterTanggal').value = getTodayDate();
 
-    // Proses pengiriman data saat tombol simpan ditekan
-    document.getElementById('form-data').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const btn = document.getElementById('btn-submit');
-        const msg = document.getElementById('msg');
-        
-        btn.innerText = "Menyimpan...";
-        btn.disabled = true;
-        msg.innerText = "";
-        
-        const dataPayload = {
-            resi: document.getElementById('resi').value,
-            sku: document.getElementById('sku').value,
-            variasi: document.getElementById('variasi').value,
-            qty: document.getElementById('qty').value
-        };
-
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Mencegah error CORS
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dataPayload)
-        })
-        .then(() => {
-            msg.innerText = "Berhasil disimpan!";
-            msg.style.color = "green";
-            
-            // Kosongkan form kecuali QTY
-            document.getElementById('resi').value = '';
-            document.getElementById('sku').value = '';
-            document.getElementById('variasi').value = '';
-            
-            // Nyalakan kamera lagi setelah 1.5 detik
-            setTimeout(() => {
-                msg.innerText = "";
-                btn.innerText = "Simpan ke Spreadsheet";
-                btn.disabled = false;
-                html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
-            }, 1500);
-        })
-        .catch(error => {
-            msg.innerText = "Terjadi kesalahan koneksi!";
-            msg.style.color = "red";
-            btn.innerText = "Simpan ke Spreadsheet";
-            btn.disabled = false;
-        });
-    });
-
-    // ===================== OCR (Baca Nama SKU dari Foto Label) =====================
-    const btnOcr = document.getElementById('btn-ocr');
-    const ocrFileInput = document.getElementById('ocr-file');
-    const ocrResultsEl = document.getElementById('ocr-results');
-    const skuInput = document.getElementById('sku');
-    const msgEl = document.getElementById('msg');
-
-    btnOcr.addEventListener('click', () => {
-        ocrFileInput.click();
-    });
-
-    ocrFileInput.addEventListener('change', async function () {
-        const file = this.files[0];
-        if (!file) return;
-
-        ocrResultsEl.innerHTML = '';
-        msgEl.innerText = "Membaca teks dari foto (0%)...";
-        msgEl.style.color = "blue";
-        btnOcr.disabled = true;
-        const originalIcon = btnOcr.innerText;
-        btnOcr.innerText = "⏳";
-
+    // Fungsi mengambil data dari Apps Script
+    async function fetchData() {
         try {
-            const processedImage = await preprocessImageForOCR(file);
-
-            const { data } = await Tesseract.recognize(processedImage, 'eng+ind', {
-                logger: (info) => {
-                    if (info.status === 'recognizing text') {
-                        const percent = Math.round(info.progress * 100);
-                        msgEl.innerText = `Membaca teks dari foto (${percent}%)...`;
-                    }
-                }
-            });
-
-            // Ambil baris teks yang cukup panjang untuk jadi kandidat nama SKU
-            const lines = data.text
-                .split('\n')
-                .map(l => l.trim())
-                .filter(l => l.length >= 2);
-
-            if (lines.length === 0) {
-                msgEl.innerText = "Teks tidak terbaca jelas, silakan isi manual.";
-                msgEl.style.color = "red";
-            } else {
-                // Isi otomatis kandidat teks terpanjang (biasanya nama produk paling lengkap)
-                const bestGuess = lines.reduce((a, b) => (b.length > a.length ? b : a));
-                skuInput.value = bestGuess;
-
-                msgEl.innerText = "Teks terbaca! Periksa, atau ketuk pilihan lain di bawah.";
-                msgEl.style.color = "green";
-
-                // Tampilkan semua baris sebagai pilihan yang bisa diketuk
-                lines.forEach(line => {
-                    const chip = document.createElement('div');
-                    chip.className = 'ocr-chip';
-                    chip.innerText = line;
-                    chip.addEventListener('click', () => {
-                        skuInput.value = line;
-                        skuInput.focus();
-                    });
-                    ocrResultsEl.appendChild(chip);
-                });
+            const response = await fetch(apiUrl);
+            const text = await response.text();
+            
+            // Mencoba mendeteksi jika response JSON atau CSV
+            try {
+                let json = JSON.parse(text);
+                // Menyesuaikan dengan format output JSON standar (array atau dalam object data)
+                allData = Array.isArray(json) ? json : (json.data || []);
+            } catch (e) {
+                // Jika error parse JSON, asumsikan output berupa CSV
+                allData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
             }
-        } catch (err) {
-            msgEl.innerText = "Gagal membaca teks dari foto.";
-            msgEl.style.color = "red";
-        } finally {
-            btnOcr.disabled = false;
-            btnOcr.innerText = originalIcon;
-            ocrFileInput.value = ''; // reset agar foto yang sama bisa dipilih lagi
+
+            // Sembunyikan pesan loading
+            document.getElementById('loading-msg').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'flex';
+            
+            // Tampilkan data yang sudah difilter
+            filterAndDisplay();
+
+        } catch (error) {
+            console.error("Gagal memuat:", error);
+            document.getElementById('loading-msg').innerText = "Gagal mengambil data. Pastikan API Apps Script berjalan normal.";
+            document.getElementById('loading-msg').style.color = "red";
         }
-    });
-
-    // Perbesar & pertajam kontras foto sebelum OCR supaya teks lebih mudah terbaca
-    function preprocessImageForOCR(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const img = new Image();
-                img.onload = function () {
-                    const scale = 2;
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const d = imgData.data;
-                    for (let i = 0; i < d.length; i += 4) {
-                        const avg = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-                        const val = avg > 150 ? 255 : (avg < 90 ? 0 : avg);
-                        d[i] = d[i + 1] = d[i + 2] = val;
-                    }
-                    ctx.putImageData(imgData, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = reject;
-                img.src = e.target.result;
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
     }
-</script>
 
+    // Fungsi menyaring (filter) data sesuai tanggal kalender yang dipilih
+    function filterAndDisplay() {
+        const selectedDate = document.getElementById('filterTanggal').value; // format YYYY-MM-DD
+        let totalQuantity = 0;
+        let tableHTML = '';
+
+        // Saring data
+        const filteredData = allData.filter(row => {
+            if(!row['Tanggal']) return false;
+
+            // Mengakali format tanggal dari Sheets agar bersih menjadi YYYY-MM-DD
+            let rawDate = row['Tanggal'].toString().trim();
+            let rowDate = "";
+            
+            if (rawDate.includes('T') && rawDate.endsWith('Z')) {
+                // Format ISO dari Google Apps Script UTC
+                let d = new Date(rawDate);
+                let yyyy = d.getFullYear();
+                let mm = String(d.getMonth() + 1).padStart(2, '0');
+                let dd = String(d.getDate()).padStart(2, '0');
+                rowDate = `${yyyy}-${mm}-${dd}`;
+            } else {
+                // Jika formatnya sudah teks string YYYY-MM-DD (membuang jam)
+                rowDate = rawDate.split('T')[0].split(' ')[0];
+            }
+            
+            return rowDate === selectedDate;
+        });
+
+        // Generate baris tabel dan hitung total
+        filteredData.forEach(row => {
+            const qty = parseInt(row['Quantity']) || 0;
+            totalQuantity += qty; 
+            
+            tableHTML += `
+                <tr>
+                    <td>${row['Tanggal'] ? row['Tanggal'].toString().split('T')[0] : '-'}</td>
+                    <td>${row['ID'] || '-'}</td>
+                    <td>${row['Nama Produk'] || '-'}</td>
+                    <td>${row['Ukuran'] || '-'}</td>
+                    <td>${qty}</td>
+                </tr>
+            `;
+        });
+
+        // Update ke HTML
+        document.getElementById('total-angka').innerText = totalQuantity;
+        document.getElementById('table-body').innerHTML = tableHTML || `<tr><td colspan="5" style="text-align:center;">Tidak ada pesanan pada tanggal ${selectedDate}</td></tr>`;
+        
+        // Reset kolom pencarian saat ganti tanggal
+        document.getElementById('searchInput').value = '';
+        searchTable();
+    }
+
+    // Fungsi Filter/Pencarian dalam Tabel (Search Bar)
+    function searchTable() {
+        let input = document.getElementById("searchInput").value.toLowerCase();
+        let tr = document.getElementById("table-body").getElementsByTagName("tr");
+
+        for (let i = 0; i < tr.length; i++) {
+            // Index 2 = Nama Produk, Index 3 = Ukuran
+            let tdNama = tr[i].getElementsByTagName("td")[2];
+            let tdUkuran = tr[i].getElementsByTagName("td")[3];
+            
+            if (tdNama && tdUkuran) {
+                let txtValueNama = tdNama.textContent || tdNama.innerText;
+                let txtValueUkuran = tdUkuran.textContent || tdUkuran.innerText;
+                
+                if (txtValueNama.toLowerCase().indexOf(input) > -1 || txtValueUkuran.toLowerCase().indexOf(input) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }       
+        }
+    }
+
+    // Fungsi navigasi halaman Dashboard <-> Detail
+    function toggleView(viewId) {
+        document.getElementById('dashboard-view').style.display = viewId === 'dashboard-view' ? 'flex' : 'none';
+        document.getElementById('details-view').style.display = viewId === 'details-view' ? 'block' : 'none';
+        
+        if(viewId === 'dashboard-view') {
+            document.getElementById('searchInput').value = '';
+            searchTable(); 
+        }
+    }
+
+    // Jalankan saat web dimuat
+    window.onload = fetchData;
+</script>
 </body>
 </html>
