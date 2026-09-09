@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Input Pesanan</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f3f4f6; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex;
+            justify-content: center;
+        }
+        .container { 
+            width: 100%; 
+            max-width: 500px; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+        }
+        h1 { text-align: center; color: #1f2937; margin-top: 0; }
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #4b5563; font-size: 14px;}
+        input, select { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #d1d5db; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            box-sizing: border-box;
+        }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; }
+        
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; }
+
+        button {
+            width: 100%;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+
+        .alert {
+            display: none;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .alert.success { background: #d1fae5; color: #065f46; display: block; }
+        .alert.error { background: #fee2e2; color: #991b1b; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Input Pesanan Baru</h1>
+    
+    <div id="alertBox" class="alert"></div>
+
+    <form id="orderForm">
+        <div class="row">
+            <div class="form-group col">
+                <label for="tanggal">Tanggal</label>
+                <input type="date" id="tanggal" required>
+            </div>
+            <div class="form-group col">
+                <label for="id_pesanan">ID Pesanan</label>
+                <!-- Dibuat readonly agar tidak perlu repot ngetik, tapi bisa diubah jadi text biasa kalau mau input manual -->
+                <input type="text" id="id_pesanan" required readonly style="background-color: #f9fafb;">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="nama_produk">Nama Produk</label>
+            <input type="text" id="nama_produk" placeholder="Contoh: Diora Pants" required>
+        </div>
+
+        <div class="row">
+            <div class="form-group col">
+                <label for="ukuran">Ukuran</label>
+                <select id="ukuran" required>
+                    <option value="" disabled selected>Pilih Ukuran</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                    <option value="All Size">All Size</option>
+                </select>
+            </div>
+            <div class="form-group col">
+                <label for="quantity">Quantity</label>
+                <input type="number" id="quantity" min="1" value="1" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" required>
+                <option value="Masuk">Masuk</option>
+                <option value="Terkirim">Terkirim</option>
+            </select>
+        </div>
+
+        <button type="submit" id="btnSubmit">Simpan ke Spreadsheet</button>
+    </form>
+</div>
+
+<script>
+    // ⚠️ GANTI DENGAN URL APPS SCRIPT ANDA
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyDS8RsZlKDJ4l2kyscC_9QkN-rDQhtkfKGXyDwR8HG-GpCG93JTgud3zzmze0AB9p2/exec';
+
+    // Set default tanggal hari ini
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('tanggal').value = `${yyyy}-${mm}-${dd}`;
+
+    // Generate ID otomatis (Contoh: INV-1715423000)
+    function generateID() {
+        document.getElementById('id_pesanan').value = 'INV-' + Math.floor(Date.now() / 1000);
+    }
+    generateID(); // Jalankan saat web dibuka
+
+    // Fungsi submit data
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
+        e.preventDefault(); // Mencegah reload halaman
+
+        const btnSubmit = document.getElementById('btnSubmit');
+        const alertBox = document.getElementById('alertBox');
+        
+        // Ambil nilai dari form
+        const payload = {
+            tanggal: document.getElementById('tanggal').value,
+            id: document.getElementById('id_pesanan').value,
+            namaProduk: document.getElementById('nama_produk').value,
+            ukuran: document.getElementById('ukuran').value,
+            quantity: document.getElementById('quantity').value,
+            status: document.getElementById('status').value
+        };
+
+        // Ubah tombol jadi loading
+        btnSubmit.innerText = "Menyimpan data...";
+        btnSubmit.disabled = true;
+        alertBox.className = "alert";
+        alertBox.innerText = "";
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                // body dikirim sebagai JSON string biasa (tanpa headers rumit agar tidak kena blokir CORS Google)
+                body: JSON.stringify(payload) 
+            });
+
+            const result = await response.json();
+
+            if(result.status === 'success') {
+                alertBox.innerText = "✅ Pesanan berhasil disimpan!";
+                alertBox.className = "alert success";
+                
+                // Reset form sebagian (Tanggal & Status dibiarkan)
+                document.getElementById('nama_produk').value = '';
+                document.getElementById('ukuran').value = '';
+                document.getElementById('quantity').value = '1';
+                generateID(); // Buat ID baru
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            alertBox.innerText = "❌ Gagal menyimpan: " + error.message;
+            alertBox.className = "alert error";
+        } finally {
+            // Kembalikan tombol ke semula
+            btnSubmit.innerText = "Simpan ke Spreadsheet";
+            btnSubmit.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>
