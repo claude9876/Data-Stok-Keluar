@@ -8,22 +8,27 @@ const APP_SHELL = [
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(APP_SHELL);
+  })());
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+
+    // ES2025: Set.prototype.difference() untuk mencari cache lama yang harus dihapus
+    const staleCaches = new Set(keys).difference(new Set([CACHE_NAME]));
+
+    // ES2025: Iterator Helpers (.map() langsung di atas Set iterator)
+    await Promise.all(staleCaches.values().map((key) => caches.delete(key)));
+  })());
   self.clients.claim();
 });
 
@@ -38,17 +43,25 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Aset app shell -> cache-first, lalu perbarui cache di latar belakang
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request).then((response) => {
-        if (event.request.method === 'GET' && response.status === 200 && url.origin === self.location.origin) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-        }
-        return response;
-      }).catch(() => cached);
+  event.respondWith((async () => {
+    const cached = await caches.match(event.request);
 
-      return cached || network;
-    })
-  );
+    const networkFetch = (async () => {
+      const response = await fetch(event.request);
+
+      const isCacheableAsset =
+        event.request.method === 'GET' &&
+        response.status === 200 &&
+        url.origin === self.location.origin;
+
+      if (isCacheableAsset) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(event.request, response.clone());
+      }
+
+      return response;
+    })().catch(() => cached);
+
+    return cached ?? networkFetch;
+  })());
 });
