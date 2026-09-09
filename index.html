@@ -20,9 +20,8 @@
             background-color: #f3f4f6; 
             margin: 0; 
             padding: 0;
-            padding-bottom: 70px; /* Ruang untuk navigasi bawah */
+            padding-bottom: 70px;
         }
-        /* Pastikan atribut HTML5 [hidden] selalu menang atas aturan display lain */
         [hidden] { display: none !important; }
         .container { 
             max-width: 800px; 
@@ -36,42 +35,19 @@
         }
         h1, h2 { text-align: center; color: #1f2937; margin-top: 0; }
         
-        /* Navigasi Bawah ala Aplikasi HP */
+        /* Navigasi Bawah */
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: white;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-around;
-            z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-around; z-index: 1000;
         }
         .nav-item {
-            flex: 1;
-            text-align: center;
-            padding: 15px 0;
-            color: #6b7280;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-            font-size: 14px;
-            background: none;
-            border: none;
-            font-family: inherit;
+            flex: 1; text-align: center; padding: 15px 0; color: #6b7280; font-weight: 600;
+            cursor: pointer; transition: 0.3s; font-size: 14px; background: none; border: none; font-family: inherit;
         }
-        .nav-item.active {
-            color: #3b82f6;
-            border-top: 3px solid #3b82f6;
-            background: #f0f9ff;
-        }
+        .nav-item.active { color: #3b82f6; border-top: 3px solid #3b82f6; background: #f0f9ff; }
 
         /* --- CSS DASHBOARD --- */
-        .date-filter {
-            display: flex; justify-content: center; align-items: center;
-            margin-bottom: 10px; gap: 10px; font-weight: bold; color: #4b5563;
-        }
+        .date-filter { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; gap: 10px; font-weight: bold; color: #4b5563; }
         .date-filter input { padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 16px; }
         .sync-status { text-align: center; font-size: 12px; color: #9ca3af; margin-bottom: 20px; }
         
@@ -87,19 +63,19 @@
         .card .number { font-size: 72px; font-weight: bold; margin-top: 10px; }
         
         .btn-back { background: #6b7280; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-bottom:15px; }
-        input[type="text"], input[type="search"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px;}
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
-        th { background-color: #f9fafb; }
+        input[type="text"], input[type="search"], input[type="number"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px;}
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+        th { background-color: #f9fafb; white-space: nowrap; }
         .table-responsive { overflow-x: auto; }
 
         /* --- CSS FORM INPUT --- */
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; color: #4b5563; font-size: 14px;}
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; box-sizing: border-box;}
-        .row-flex { display: flex; gap: 15px; }
-        .col-flex { flex: 1; }
-        .btn-submit { width: 100%; background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .row-flex { display: flex; gap: 15px; flex-wrap: wrap;}
+        .col-flex { flex: 1; min-width: 140px;}
+        .btn-submit { width: 100%; background: #3b82f6; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-submit:disabled { background: #9ca3af; }
         .alert { display: none; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: 600; }
         .alert.success { background: #d1fae5; color: #065f46; display: block; }
@@ -142,12 +118,12 @@
         <div id="details-view" hidden>
             <button type="button" class="btn-back" id="btn-back">← Kembali ke Ringkasan</button>
             <h2>Rincian Pesanan</h2>
-            <input type="search" id="searchInput" placeholder="Cari ID / Produk / Warna / Ukuran..." aria-label="Cari data pesanan">
+            <input type="search" id="searchInput" placeholder="Cari Pembeli / Produk / Platform..." aria-label="Cari data pesanan">
             <div class="table-responsive">
                 <table>
                     <thead>
                         <tr>
-                          <th>Tanggal</th><th>ID</th><th>Produk</th><th>Warna</th><th>Ukuran</th><th>Qty</th>
+                          <th>Pltfrm</th><th>Pembeli/ID</th><th>Produk</th><th>Warna</th><th>Ukrn</th><th>Qty</th>
                         </tr>
                     </thead>
                     <tbody id="table-body"></tbody>
@@ -176,9 +152,26 @@
                 </div>
             </div>
 
+            <!-- PENAMBAHAN PLATFORM & PEMBELI -->
+            <div class="row-flex">
+                <div class="form-group col-flex">
+                    <label for="platform">Platform / Sumber</label>
+                    <select id="platform" required>
+                        <option value="Shopee">Shopee</option>
+                        <option value="TikTok Shop">TikTok Shop</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                        <option value="Offline">Offline</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group col-flex">
+                    <label for="nama_pembeli">Nama Pembeli <small>(Opsional)</small></label>
+                    <input type="text" id="nama_pembeli" placeholder="Nama / Username">
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="nama_produk">Nama Produk</label>
-                <!-- Menambahkan list untuk auto-complete -->
                 <input type="text" id="nama_produk" list="daftar-produk" placeholder="Contoh: Diora Pants" required>
                 <datalist id="daftar-produk">
                     <option value="Diora Pants">
@@ -188,7 +181,6 @@
             
             <div class="form-group">
                 <label for="warna">Varian Warna</label>
-                <!-- Menambahkan list untuk auto-complete -->
                 <input type="text" id="warna" list="daftar-warna" placeholder="Contoh: Hitam, Putih, Maroon" required>
                 <datalist id="daftar-warna">
                     <option value="Hitam">
@@ -198,7 +190,6 @@
                     <option value="Cream">
                 </datalist>
             </div>
-
 
             <div class="row-flex">
                 <div class="form-group col-flex">
@@ -224,12 +215,19 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="status">Status</label>
-                <select id="status" required>
-                    <option value="Masuk">Masuk</option>
-                    <option value="Terkirim">Terkirim</option>
-                </select>
+            <!-- PENAMBAHAN RESI & STATUS -->
+            <div class="row-flex">
+                <div class="form-group col-flex">
+                    <label for="status">Status</label>
+                    <select id="status" required>
+                        <option value="Masuk">Masuk</option>
+                        <option value="Terkirim">Terkirim</option>
+                    </select>
+                </div>
+                <div class="form-group col-flex">
+                    <label for="resi">Nomor Resi <small>(Opsional)</small></label>
+                    <input type="text" id="resi" placeholder="Input resi jika dikirim">
+                </div>
             </div>
 
             <button type="submit" id="btnSubmit" class="btn-submit">Simpan Data</button>
@@ -252,7 +250,6 @@
     // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
     const API_URL = 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec';
     
-    // PEMBARUAN: Interval diubah ke 60 detik (60000 ms) agar aman dari limit quota Google
     const SYNC_INTERVAL_MS = 60000; 
     const FETCH_TIMEOUT_MS = 15000; 
     let allData = [];
@@ -362,9 +359,17 @@
                 if (status.includes('terkirim') || status.includes('kirim')) idsTerkirim.add(id);
                 else idsMasuk.add(id);
 
+                // Mengambil nilai tambahan dengan aman, fallback ke ID jika pembeli kosong
+                let platform = escapeHTML(row['Platform'] || '-');
+                let pembeli = escapeHTML(row['Nama Pembeli'] || row['ID'] || '-');
+
                 tableHTML += `<tr>
-                    <td>${escapeHTML(rowDate)}</td><td>${escapeHTML(row['ID'] || '-')}</td>
-                    <td>${escapeHTML(row['Nama Produk'] || '-')}</td><td>${escapeHTML(row['Warna'] || '-')}</td><td>${escapeHTML(row['Ukuran'] || '-')}</td><td>${qty}</td>
+                    <td>${platform}</td>
+                    <td><strong>${pembeli}</strong></td>
+                    <td>${escapeHTML(row['Nama Produk'] || '-')}</td>
+                    <td>${escapeHTML(row['Warna'] || '-')}</td>
+                    <td>${escapeHTML(row['Ukuran'] || '-')}</td>
+                    <td>${qty}</td>
                 </tr>`;
             }
         });
@@ -376,18 +381,17 @@
         searchTable();
     }
 
-    // PEMBARUAN: Pencarian meliputi ID, Nama, Warna, dan Ukuran
     function searchTable() {
         let input = document.getElementById("searchInput").value.toLowerCase();
         let tr = document.getElementById("table-body").getElementsByTagName("tr");
         for (let i = 0; i < tr.length; i++) {
-            let tdID = tr[i].getElementsByTagName("td")[1];
-            let tdNama = tr[i].getElementsByTagName("td")[2];
+            let tdPltfrm = tr[i].getElementsByTagName("td")[0];
+            let tdPembeli = tr[i].getElementsByTagName("td")[1];
+            let tdProduk = tr[i].getElementsByTagName("td")[2];
             let tdWarna = tr[i].getElementsByTagName("td")[3];
-            let tdUkuran = tr[i].getElementsByTagName("td")[4];
             
-            if (tdID && tdNama && tdWarna && tdUkuran) {
-                let txt = (tdID.textContent + " " + tdNama.textContent + " " + tdWarna.textContent + " " + tdUkuran.textContent).toLowerCase();
+            if (tdPltfrm && tdPembeli && tdProduk && tdWarna) {
+                let txt = (tdPltfrm.textContent + " " + tdPembeli.textContent + " " + tdProduk.textContent + " " + tdWarna.textContent).toLowerCase();
                 tr[i].style.display = txt.includes(input) ? "" : "none";
             }       
         }
@@ -419,6 +423,7 @@
             return;
         }
         
+        // PEMBARUAN: Payload data mencakup field baru
         const payload = {
             tanggal: document.getElementById('input_tanggal').value,
             id: document.getElementById('id_pesanan').value,
@@ -426,7 +431,10 @@
             warna: warna,
             ukuran: ukuran,
             quantity: quantity,
-            status: document.getElementById('status').value
+            status: document.getElementById('status').value,
+            platform: document.getElementById('platform').value,
+            namaPembeli: document.getElementById('nama_pembeli').value.trim(),
+            resi: document.getElementById('resi').value.trim()
         };
 
         btn.innerText = "Menyimpan..."; btn.disabled = true; alertBox.className = "alert";
@@ -438,11 +446,17 @@
             if(result.status === 'success') {
                 alertBox.innerText = "✅ Berhasil disimpan!";
                 alertBox.className = "alert success";
+                
+                // SMART RESET: Hanya mengosongkan form detail produk & pembeli
+                document.getElementById('nama_pembeli').value = '';
                 document.getElementById('nama_produk').value = '';
                 document.getElementById('warna').value = '';
                 document.getElementById('ukuran').value = '';
                 document.getElementById('quantity').value = '1';
+                document.getElementById('resi').value = '';
+                
                 generateID();
+                document.getElementById('nama_produk').focus(); // Auto-focus ke input produk untuk item selanjutnya
                 syncData(); 
             } else throw new Error(result.message || 'Respon server tidak dikenali.');
         } catch (error) {
@@ -486,7 +500,6 @@
         window.addEventListener('focus', syncData);
     };
 
-    // PEMBARUAN: Registrasi Service Worker untuk kapabilitas PWA (Bisa diinstall di HP)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
