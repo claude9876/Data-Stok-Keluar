@@ -1,0 +1,25 @@
+{
+  "name": "Dashboard Pesanan Harian",
+  "short_name": "Pesanan Harian",
+  "description": "Dashboard pemantauan pesanan harian dengan sinkronisasi otomatis dari Google Sheets",
+  "start_url": "./dashboard.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f3f4f6",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
