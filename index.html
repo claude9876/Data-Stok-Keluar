@@ -417,11 +417,9 @@ const UI = {
     },
 
     bindEvents() {
-        // Navigasi Bawah
         document.getElementById('nav-dashboard').addEventListener('click', () => this.switchPage('dashboard'));
         document.getElementById('nav-input').addEventListener('click', () => this.switchPage('input'));
         
-        // Interaksi Dashboard
         document.getElementById('filterTanggal').addEventListener('change', (e) => {
             State.selectedDate = e.target.value;
             this.renderDashboard();
@@ -430,7 +428,6 @@ const UI = {
         document.getElementById('btn-back').addEventListener('click', () => this.toggleDetails(false));
         document.getElementById('searchInput').addEventListener('input', (e) => this.filterCards(e.target.value));
         
-        // Tab Menu Status
         const tabs = document.querySelectorAll('.tab-btn');
         tabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -441,7 +438,6 @@ const UI = {
             });
         });
 
-        // Event Form & Keranjang
         document.getElementById('orderForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.addToCart();
@@ -460,7 +456,6 @@ const UI = {
         if (isDash) {
             API.getData();
         } else {
-            // Generate ID baru jika keranjang kosong saat pindah halaman
             if(State.cart.length === 0) {
                 document.getElementById('id_pesanan').value = Utils.generateOrderID();
             }
@@ -495,7 +490,9 @@ const UI = {
     },
 
     renderDashboard() {
-        let totalQty = 0, countMasuk = 0, countTerkirim = 0;
+        let totalQty = 0;
+        let uniqueMasuk = new Set();
+        let uniqueTerkirim = new Set();
         let listHTML = '';
 
         State.allData.forEach(row => {
@@ -507,11 +504,16 @@ const UI = {
                 const qty = parseInt(row['Quantity']) || 0;
                 totalQty += qty;
                 
+                const id = row['ID'] || JSON.stringify(row); // Mengambil ID pesanan untuk hitung pesanan unik
                 const status = (row['Status'] || '').toLowerCase();
                 const isTerkirim = status.includes('terkirim') || status.includes('kirim');
                 
-                if (isTerkirim) countTerkirim++;
-                else countMasuk++;
+                // Menghitung berdasarkan ID Unik (Invoice)
+                if (isTerkirim) {
+                    uniqueTerkirim.add(id);
+                } else {
+                    uniqueMasuk.add(id);
+                }
 
                 let platform = Utils.escapeHTML(row['Platform'] || '-');
                 let pembeli = Utils.escapeHTML(row['Nama Pembeli'] || row['ID'] || 'Tanpa Nama');
@@ -547,9 +549,10 @@ const UI = {
             }
         });
 
-        document.getElementById('stat-masuk').innerText = countMasuk;
-        document.getElementById('stat-terkirim').innerText = countTerkirim;
-        document.getElementById('stat-total').innerText = totalQty;
+        // Update angka di dashboard berdasarkan ID unik (bukan per baris/warna)
+        document.getElementById('stat-masuk').innerText = uniqueMasuk.size;
+        document.getElementById('stat-terkirim').innerText = uniqueTerkirim.size;
+        document.getElementById('stat-total').innerText = totalQty; // Tetap hitung total qty produk
         
         if (!listHTML) {
             listHTML = `<div class="empty-state">Belum ada pesanan pada tanggal ini.</div>`;
@@ -604,7 +607,6 @@ const UI = {
         }, 3000);
     },
 
-    // FITUR KERANJANG - Menambahkan varian ke list lokal
     addToCart() {
         const namaProduk = document.getElementById('nama_produk').value.trim();
         const warna = document.getElementById('warna').value.trim();
@@ -616,16 +618,14 @@ const UI = {
         State.cart.push({ namaProduk, warna, ukuran, quantity });
         this.renderCartUI();
 
-        // Reset HANYA form varian (biarkan nama produk utuh jika pembeli beli model sama)
         document.getElementById('warna').value = '';
         document.getElementById('ukuran').selectedIndex = 0;
         document.getElementById('quantity').value = '1';
-        document.getElementById('warna').focus(); // Fokus ke warna agar bisa langsung input varian 2
+        document.getElementById('warna').focus(); 
         
         this.showToast('Barang dimasukkan ke daftar.', 'success');
     },
 
-    // Render ulang area keranjang
     renderCartUI() {
         const cartArea = document.getElementById('cart-area');
         const cartList = document.getElementById('cart-list');
@@ -661,14 +661,12 @@ const UI = {
         this.renderCartUI();
     },
 
-    // FITUR KERANJANG - Mengirim semua varian ke Server (tanpa mengubah arsitektur API)
     async submitFinalOrder() {
         if(State.cart.length === 0) return;
 
         const btn = document.getElementById('btnSubmitFinal');
         const btnAdd = document.getElementById('btnAddToCart');
         
-        // Ambil data Umum (Hanya diambil sekali untuk diterapkan ke semua barang)
         const commonData = {
             tanggal: document.getElementById('input_tanggal').value,
             id: document.getElementById('id_pesanan').value,
@@ -684,7 +682,6 @@ const UI = {
         
         let successCount = 0;
 
-        // Loop untuk mengirim data SATU PER SATU agar kompatibel dengan API lama
         for (const item of State.cart) {
             const payload = {
                 ...commonData,
@@ -712,11 +709,9 @@ const UI = {
         if (successCount === State.cart.length) {
             this.showToast('✅ Semua pesanan berhasil disimpan!', 'success');
             
-            // Bersihkan Keranjang
             State.cart = [];
             this.renderCartUI();
             
-            // Reset Form Umum
             document.getElementById('nama_pembeli').value = '';
             document.getElementById('resi').value = '';
             document.getElementById('nama_produk').value = '';
@@ -724,7 +719,7 @@ const UI = {
             
             document.getElementById('nama_pembeli').focus();
             
-            API.getData(); // Refresh Dashboard di belakang layar
+            API.getData(); 
         } else {
             this.showToast(`⚠️ Hanya ${successCount} dari ${State.cart.length} yang tersimpan. Cek jaringan.`, 'error');
         }
