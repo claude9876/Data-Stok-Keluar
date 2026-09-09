@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Manajemen Pesanan Fashion</title>
 
-    <!-- ===== PWA: manifest, theme color, ikon ===== -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
@@ -64,7 +63,7 @@
         .bg-terkirim { background: linear-gradient(135deg, #10b981, #059669); }
         .bg-total { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); grid-column: span 2; cursor: pointer; }
 
-        /* --- 4. TABS & ORDER CARDS (RINCIAN BARU) --- */
+        /* --- 4. TABS & ORDER CARDS --- */
         .detail-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
         .detail-header h2 { margin: 0; flex: 1; text-align: left; }
         
@@ -100,17 +99,27 @@
 
         .empty-state { text-align: center; padding: 30px; color: var(--text-muted); background: #f9fafb; border-radius: 10px; border: 1px dashed var(--border); }
 
-        /* --- 5. FORMS & INPUTS --- */
+        /* --- 5. FORMS, INPUTS & CART SYSTEM --- */
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: var(--text-main); }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; transition: border 0.3s; }
         input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        input[readonly] { background-color: #f9fafb; cursor: not-allowed; }
+        input[readonly] { background-color: #f9fafb; cursor: not-allowed; font-weight: 600; color: var(--primary); }
 
         .btn { width: 100%; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
-        .btn-primary { background: var(--primary); color: white; margin-top: 10px; }
+        .btn-primary { background: var(--success); color: white; margin-top: 10px; }
         .btn-primary:disabled { background: var(--text-muted); cursor: wait; }
         .btn-secondary { background: #f3f4f6; color: var(--text-main); width: auto; padding: 10px 15px; }
+        .btn-add { background: var(--primary); color: white; border: 1px solid var(--primary-hover); margin-bottom: 20px;}
+
+        .section-divider { border: 0; border-top: 2px dashed var(--border); margin: 20px 0; }
+        .section-title { font-size: 15px; font-weight: bold; color: var(--text-muted); margin-bottom: 15px; text-transform: uppercase; }
+
+        .cart-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
+        .cart-item-detail { display: flex; flex-direction: column; }
+        .cart-item-title { font-weight: bold; color: var(--text-main); font-size: 14px;}
+        .cart-item-variant { font-size: 12px; color: var(--text-muted); }
+        .btn-remove { background: #fee2e2; color: #dc2626; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
 
         /* --- 6. TOAST & BOTTOM NAV --- */
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
@@ -165,14 +174,13 @@
                 </div>
             </div>
 
-            <!-- HALAMAN DETAIL (Sub-view Rincian Transaksi) -->
+            <!-- HALAMAN DETAIL -->
             <div id="view-details" hidden>
                 <div class="detail-header">
                     <button type="button" class="btn btn-secondary" id="btn-back">← Kembali</button>
                     <h2>Rincian Pesanan</h2>
                 </div>
                 
-                <!-- MENU TAB STATUS -->
                 <div class="tabs" id="statusTabs">
                     <button class="tab-btn active" data-target="all">Semua</button>
                     <button class="tab-btn" data-target="masuk">Perlu Dikirim</button>
@@ -183,10 +191,7 @@
                     <input type="search" id="searchInput" placeholder="🔍 Cari Pembeli, Produk, atau Platform..." autocomplete="off">
                 </div>
                 
-                <!-- CONTAINER DAFTAR PESANAN (CARD VIEW) -->
-                <div id="order-list-container" class="order-list">
-                    <!-- Data Kartu Pesanan akan dimuat di sini -->
-                </div>
+                <div id="order-list-container" class="order-list"></div>
             </div>
         </div>
     </section>
@@ -195,14 +200,16 @@
     <section id="page-input" aria-label="Input Pesanan Baru" hidden>
         <div class="container">
             <h1>Input Pesanan</h1>
+            
             <form id="orderForm">
+                <div class="section-title">1. Data Pesanan Umum</div>
                 <div class="grid-2">
                     <div class="form-group">
                         <label for="input_tanggal">Tanggal</label>
                         <input type="date" id="input_tanggal" required>
                     </div>
                     <div class="form-group">
-                        <label for="id_pesanan">ID Pesanan (Auto)</label>
+                        <label for="id_pesanan">ID Pesanan (Otomatis & Sama)</label>
                         <input type="text" id="id_pesanan" required readonly>
                     </div>
                 </div>
@@ -224,6 +231,23 @@
                     </div>
                 </div>
 
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="status">Status Pemrosesan</label>
+                        <select id="status" required>
+                            <option value="Masuk">Perlu Dikirim (Masuk)</option>
+                            <option value="Terkirim">Dikirim (Selesai)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="resi">Nomor Resi <small>(Opsional)</small></label>
+                        <input type="text" id="resi" placeholder="Input resi pengiriman">
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <div class="section-title">2. Detail Barang / Varian</div>
                 <div class="form-group">
                     <label for="nama_produk">Nama Produk</label>
                     <input type="text" id="nama_produk" list="daftar-produk" placeholder="Contoh: Diora Pants" required>
@@ -260,22 +284,20 @@
                     </div>
                 </div>
 
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="status">Status Pemrosesan</label>
-                        <select id="status" required>
-                            <option value="Masuk">Perlu Dikirim (Masuk)</option>
-                            <option value="Terkirim">Dikirim (Selesai)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="resi">Nomor Resi <small>(Opsional)</small></label>
-                        <input type="text" id="resi" placeholder="Input resi pengiriman">
-                    </div>
-                </div>
-
-                <button type="submit" id="btnSubmit" class="btn btn-primary">Simpan Pesanan</button>
+                <!-- Tombol Submit Form (Diubah fungsionalitasnya untuk tambah ke keranjang) -->
+                <button type="submit" id="btnAddToCart" class="btn btn-add">➕ Tambah ke Daftar Variasi</button>
             </form>
+            
+            <!-- AREA KERANJANG (CART) -->
+            <div id="cart-area" hidden>
+                <div class="section-title" style="color: var(--primary);">Daftar Barang (Akan Disimpan)</div>
+                <div id="cart-list" style="margin-bottom: 20px;"></div>
+                
+                <button type="button" id="btnSubmitFinal" class="btn btn-primary">
+                    💾 Simpan ke Server (<span id="cart-total-qty">0</span> pcs)
+                </button>
+            </div>
+            
         </div>
     </section>
 </main>
@@ -307,7 +329,8 @@ const State = {
     allData: [],
     isSyncing: false,
     selectedDate: '',
-    currentTabStatus: 'all' // 'all', 'masuk', 'terkirim'
+    currentTabStatus: 'all',
+    cart: [] // Penyimpanan sementara (Keranjang)
 };
 
 // 3. UTILITIES
@@ -388,6 +411,7 @@ const UI = {
         State.selectedDate = Utils.getToday();
         document.getElementById('filterTanggal').value = State.selectedDate;
         document.getElementById('input_tanggal').value = State.selectedDate;
+        document.getElementById('id_pesanan').value = Utils.generateOrderID();
         
         this.bindEvents();
     },
@@ -417,8 +441,12 @@ const UI = {
             });
         });
 
-        // Form Submit
-        document.getElementById('orderForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+        // Event Form & Keranjang
+        document.getElementById('orderForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.addToCart();
+        });
+        document.getElementById('btnSubmitFinal').addEventListener('click', () => this.submitFinalOrder());
     },
 
     switchPage(page) {
@@ -432,7 +460,10 @@ const UI = {
         if (isDash) {
             API.getData();
         } else {
-            document.getElementById('id_pesanan').value = Utils.generateOrderID();
+            // Generate ID baru jika keranjang kosong saat pindah halaman
+            if(State.cart.length === 0) {
+                document.getElementById('id_pesanan').value = Utils.generateOrderID();
+            }
         }
     },
 
@@ -441,7 +472,7 @@ const UI = {
         document.getElementById('view-details').hidden = !show;
         if (!show) {
             document.getElementById('searchInput').value = '';
-            document.querySelectorAll('.tab-btn')[0].click(); // Reset ke tab "Semua"
+            document.querySelectorAll('.tab-btn')[0].click(); 
         }
     },
 
@@ -495,7 +526,6 @@ const UI = {
                 
                 let dataStatusVal = isTerkirim ? 'terkirim' : 'masuk';
 
-                // TEMPLATE KARTU PESANAN
                 listHTML += `
                 <div class="order-card" data-status="${dataStatusVal}">
                     <div class="order-card-header">
@@ -526,7 +556,7 @@ const UI = {
         }
         
         document.getElementById('order-list-container').innerHTML = listHTML;
-        this.filterCards(document.getElementById('searchInput').value); // Re-apply filter
+        this.filterCards(document.getElementById('searchInput').value); 
     },
 
     filterCards(keyword) {
@@ -537,11 +567,7 @@ const UI = {
         cards.forEach(card => {
             const textData = card.textContent.toLowerCase();
             const cardStatus = card.getAttribute('data-status');
-            
-            // Cek Tab Menu (Semua / Perlu Dikirim / Dikirim)
             const matchTab = State.currentTabStatus === 'all' || cardStatus === State.currentTabStatus;
-            
-            // Cek Kolom Pencarian
             const matchSearch = textData.includes(keyword);
 
             if (matchTab && matchSearch) {
@@ -552,7 +578,6 @@ const UI = {
             }
         });
 
-        // Handle jika tidak ada hasil pencarian/filter
         const container = document.getElementById('order-list-container');
         let emptyState = document.getElementById('empty-search');
         
@@ -579,52 +604,129 @@ const UI = {
         }, 3000);
     },
 
-    async handleFormSubmit(e) {
-        e.preventDefault();
-        const btn = document.getElementById('btnSubmit');
+    // FITUR KERANJANG - Menambahkan varian ke list lokal
+    addToCart() {
+        const namaProduk = document.getElementById('nama_produk').value.trim();
+        const warna = document.getElementById('warna').value.trim();
+        const ukuran = document.getElementById('ukuran').value;
+        const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+        if (!namaProduk || !warna || !ukuran) return;
+
+        State.cart.push({ namaProduk, warna, ukuran, quantity });
+        this.renderCartUI();
+
+        // Reset HANYA form varian (biarkan nama produk utuh jika pembeli beli model sama)
+        document.getElementById('warna').value = '';
+        document.getElementById('ukuran').selectedIndex = 0;
+        document.getElementById('quantity').value = '1';
+        document.getElementById('warna').focus(); // Fokus ke warna agar bisa langsung input varian 2
         
-        // Mapping status "Masuk" ke API
-        let rawStatus = document.getElementById('status').value;
+        this.showToast('Barang dimasukkan ke daftar.', 'success');
+    },
+
+    // Render ulang area keranjang
+    renderCartUI() {
+        const cartArea = document.getElementById('cart-area');
+        const cartList = document.getElementById('cart-list');
+        const totalLabel = document.getElementById('cart-total-qty');
         
-        const payload = {
+        if (State.cart.length === 0) {
+            cartArea.hidden = true;
+            return;
+        }
+
+        cartArea.hidden = false;
+        cartList.innerHTML = '';
+        let totalPcs = 0;
+
+        State.cart.forEach((item, index) => {
+            totalPcs += item.quantity;
+            cartList.innerHTML += `
+                <div class="cart-item">
+                    <div class="cart-item-detail">
+                        <div class="cart-item-title">${item.namaProduk}</div>
+                        <div class="cart-item-variant">${item.warna} - Ukuran ${item.ukuran} (Qty: ${item.quantity})</div>
+                    </div>
+                    <button type="button" class="btn-remove" onclick="UI.removeFromCart(${index})">Hapus</button>
+                </div>
+            `;
+        });
+        
+        totalLabel.innerText = totalPcs;
+    },
+
+    removeFromCart(index) {
+        State.cart.splice(index, 1);
+        this.renderCartUI();
+    },
+
+    // FITUR KERANJANG - Mengirim semua varian ke Server (tanpa mengubah arsitektur API)
+    async submitFinalOrder() {
+        if(State.cart.length === 0) return;
+
+        const btn = document.getElementById('btnSubmitFinal');
+        const btnAdd = document.getElementById('btnAddToCart');
+        
+        // Ambil data Umum (Hanya diambil sekali untuk diterapkan ke semua barang)
+        const commonData = {
             tanggal: document.getElementById('input_tanggal').value,
             id: document.getElementById('id_pesanan').value,
-            namaProduk: document.getElementById('nama_produk').value.trim(),
-            warna: document.getElementById('warna').value.trim(),
-            ukuran: document.getElementById('ukuran').value,
-            quantity: parseInt(document.getElementById('quantity').value, 10),
-            status: rawStatus,
+            status: document.getElementById('status').value,
             platform: document.getElementById('platform').value,
             namaPembeli: document.getElementById('nama_pembeli').value.trim(),
             resi: document.getElementById('resi').value.trim()
         };
 
-        btn.innerText = "⏳ Menyimpan..."; btn.disabled = true;
+        btn.innerText = "⏳ Memproses Transaksi..."; 
+        btn.disabled = true;
+        btnAdd.disabled = true;
         
-        try {
-            const res = await API.postData(payload);
-            if (!res.ok) throw new Error('Network error');
-            const result = await res.json();
-            
-            if(result.status === 'success') {
-                this.showToast('✅ Pesanan berhasil disimpan!', 'success');
-                
-                // Smart Reset Input
-                ['nama_pembeli', 'nama_produk', 'warna', 'resi'].forEach(id => document.getElementById(id).value = '');
-                document.getElementById('ukuran').selectedIndex = 0;
-                document.getElementById('quantity').value = '1';
-                
-                document.getElementById('id_pesanan').value = Utils.generateOrderID();
-                document.getElementById('nama_produk').focus();
-                
-                API.getData(); 
-            } else {
-                throw new Error(result.message || 'Error Server');
+        let successCount = 0;
+
+        // Loop untuk mengirim data SATU PER SATU agar kompatibel dengan API lama
+        for (const item of State.cart) {
+            const payload = {
+                ...commonData,
+                namaProduk: item.namaProduk,
+                warna: item.warna,
+                ukuran: item.ukuran,
+                quantity: item.quantity
+            };
+
+            try {
+                const res = await API.postData(payload);
+                if (res.ok) {
+                    const result = await res.json();
+                    if(result.status === 'success') successCount++;
+                }
+            } catch (error) {
+                console.error("Error pada pesanan:", item.namaProduk, error);
             }
-        } catch (error) {
-            this.showToast('❌ Gagal menyimpan: ' + error.message, 'error');
-        } finally {
-            btn.innerText = "Simpan Pesanan"; btn.disabled = false;
+        }
+
+        btn.disabled = false;
+        btnAdd.disabled = false;
+        btn.innerHTML = `💾 Simpan ke Server (<span id="cart-total-qty">0</span> pcs)`;
+
+        if (successCount === State.cart.length) {
+            this.showToast('✅ Semua pesanan berhasil disimpan!', 'success');
+            
+            // Bersihkan Keranjang
+            State.cart = [];
+            this.renderCartUI();
+            
+            // Reset Form Umum
+            document.getElementById('nama_pembeli').value = '';
+            document.getElementById('resi').value = '';
+            document.getElementById('nama_produk').value = '';
+            document.getElementById('id_pesanan').value = Utils.generateOrderID();
+            
+            document.getElementById('nama_pembeli').focus();
+            
+            API.getData(); // Refresh Dashboard di belakang layar
+        } else {
+            this.showToast(`⚠️ Hanya ${successCount} dari ${State.cart.length} yang tersimpan. Cek jaringan.`, 'error');
         }
     }
 };
