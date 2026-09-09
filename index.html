@@ -22,6 +22,8 @@
             padding: 0;
             padding-bottom: 70px; /* Ruang untuk navigasi bawah */
         }
+        /* Pastikan atribut HTML5 [hidden] selalu menang atas aturan display lain */
+        [hidden] { display: none !important; }
         .container { 
             max-width: 800px; 
             margin: 20px auto; 
@@ -55,6 +57,9 @@
             cursor: pointer;
             transition: 0.3s;
             font-size: 14px;
+            background: none;
+            border: none;
+            font-family: inherit;
         }
         .nav-item.active {
             color: #3b82f6;
@@ -81,7 +86,6 @@
         .card { background: #3b82f6; color: white; padding: 30px; border-radius: 16px; text-align: center; cursor: pointer; width: 100%; max-width: 340px; }
         .card .number { font-size: 72px; font-weight: bold; margin-top: 10px; }
         
-        #details-view { display: none; }
         .btn-back { background: #6b7280; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-bottom:15px; }
         input[type="text"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px;}
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -90,7 +94,6 @@
         .table-responsive { overflow-x: auto; }
 
         /* --- CSS FORM INPUT --- */
-        #input-view { display: none; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; color: #4b5563; font-size: 14px;}
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; box-sizing: border-box;}
@@ -106,16 +109,17 @@
 </head>
 <body>
 
+<main>
 <!-- HALAMAN 1: DASHBOARD & DETAIL -->
-<div id="page-dashboard">
+<section id="page-dashboard" aria-label="Dashboard">
     <div class="container">
         
         <div id="dashboard-view">
             <h1>Dashboard Harian</h1>
             <div class="date-filter">
-                <input type="date" id="filterTanggal" onchange="onDateChange()">
+                <input type="date" id="filterTanggal" aria-label="Filter tanggal">
             </div>
-            <div class="sync-status" id="sync-status">Memuat data...</div>
+            <div class="sync-status" id="sync-status" aria-live="polite">Memuat data...</div>
 
             <div class="mini-cards">
                 <div class="mini-card mini-card-masuk">
@@ -128,7 +132,7 @@
                 </div>
             </div>
 
-            <div class="card" onclick="toggleDetails(true)">
+            <div class="card" id="card-total" role="button" tabindex="0">
                 <h2>Total Produk</h2>
                 <div class="number" id="total-angka">0</div>
                 <p style="margin-top:10px; font-size:14px;">Klik untuk rincian variasi</p>
@@ -136,9 +140,9 @@
         </div>
 
         <div id="details-view">
-            <button class="btn-back" onclick="toggleDetails(false)">← Kembali ke Ringkasan</button>
+            <button type="button" class="btn-back" id="btn-back">← Kembali ke Ringkasan</button>
             <h2>Rincian Pesanan</h2>
-            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Cari Nama Produk / Ukuran...">
+            <input type="text" id="searchInput" placeholder="Cari Nama Produk / Ukuran..." aria-label="Cari nama produk atau ukuran">
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -152,39 +156,39 @@
         </div>
 
     </div>
-</div>
+</section>
 
 <!-- HALAMAN 2: INPUT FORM -->
-<div id="page-input" style="display: none;">
+<section id="page-input" aria-label="Input Pesanan Baru" hidden>
     <div class="container">
         <h1>Input Pesanan Baru</h1>
-        <div id="alertBox" class="alert"></div>
+        <div id="alertBox" class="alert" role="alert"></div>
 
         <form id="orderForm">
             <div class="row-flex">
                 <div class="form-group col-flex">
-                    <label>Tanggal</label>
+                    <label for="input_tanggal">Tanggal</label>
                     <input type="date" id="input_tanggal" required>
                 </div>
                 <div class="form-group col-flex">
-                    <label>ID Pesanan</label>
+                    <label for="id_pesanan">ID Pesanan</label>
                     <input type="text" id="id_pesanan" required readonly style="background-color: #f9fafb;">
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Nama Produk</label>
+                <label for="nama_produk">Nama Produk</label>
                 <input type="text" id="nama_produk" placeholder="Contoh: Diora Pants" required>
             </div>
                         <div class="form-group">
-                <label>Varian Warna</label>
+                <label for="warna">Varian Warna</label>
                 <input type="text" id="warna" placeholder="Contoh: Hitam, Putih, Maroon" required>
             </div>
 
 
             <div class="row-flex">
                 <div class="form-group col-flex">
-                    <label>Ukuran</label>
+                    <label for="ukuran">Ukuran</label>
                     <select id="ukuran" required>
                         <option value="" disabled selected>Pilih Ukuran</option>
                         <option value="S">S</option>
@@ -201,13 +205,13 @@
                     </select>
                 </div>
                 <div class="form-group col-flex">
-                    <label>Quantity</label>
+                    <label for="quantity">Quantity</label>
                     <input type="number" id="quantity" min="1" value="1" required>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Status</label>
+                <label for="status">Status</label>
                 <select id="status" required>
                     <option value="Masuk">Masuk</option>
                     <option value="Terkirim">Terkirim</option>
@@ -217,17 +221,18 @@
             <button type="submit" id="btnSubmit" class="btn-submit">Simpan Data</button>
         </form>
     </div>
-</div>
+</section>
+</main>
 
 <!-- NAVIGASI BAWAH -->
-<div class="bottom-nav">
-    <div class="nav-item active" id="nav-dashboard" onclick="switchPage('dashboard')">
+<nav class="bottom-nav" aria-label="Navigasi utama">
+    <button type="button" class="nav-item active" id="nav-dashboard" aria-current="page">
         📊<br>Dashboard
-    </div>
-    <div class="nav-item" id="nav-input" onclick="switchPage('input')">
+    </button>
+    <button type="button" class="nav-item" id="nav-input">
         📝<br>Input Data
-    </div>
-</div>
+    </button>
+</nav>
 
 <script>
     // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
@@ -257,24 +262,29 @@
 
     // --- FUNGSI NAVIGASI BAWAH ---
     function switchPage(page) {
-        if(page === 'dashboard') {
-            document.getElementById('page-dashboard').style.display = 'block';
-            document.getElementById('page-input').style.display = 'none';
-            document.getElementById('nav-dashboard').classList.add('active');
-            document.getElementById('nav-input').classList.remove('active');
+        const isDashboard = page === 'dashboard';
+        const navDashboard = document.getElementById('nav-dashboard');
+        const navInput = document.getElementById('nav-input');
+
+        document.getElementById('page-dashboard').hidden = !isDashboard;
+        document.getElementById('page-input').hidden = isDashboard;
+        navDashboard.classList.toggle('active', isDashboard);
+        navInput.classList.toggle('active', !isDashboard);
+
+        if (isDashboard) {
+            navDashboard.setAttribute('aria-current', 'page');
+            navInput.removeAttribute('aria-current');
             syncData(); // Otomatis refresh data saat buka dashboard
         } else {
-            document.getElementById('page-dashboard').style.display = 'none';
-            document.getElementById('page-input').style.display = 'block';
-            document.getElementById('nav-dashboard').classList.remove('active');
-            document.getElementById('nav-input').classList.add('active');
+            navInput.setAttribute('aria-current', 'page');
+            navDashboard.removeAttribute('aria-current');
             generateID(); // Buat ID baru saat buka tab input
         }
     }
 
     function toggleDetails(show) {
-        document.getElementById('dashboard-view').style.display = show ? 'none' : 'flex';
-        document.getElementById('details-view').style.display = show ? 'block' : 'none';
+        document.getElementById('dashboard-view').hidden = show;
+        document.getElementById('details-view').hidden = !show;
         if (!show) {
             document.getElementById('searchInput').value = '';
         }
@@ -428,6 +438,23 @@
             alertBox.className = "alert error";
         } finally {
             btn.innerText = "Simpan Data"; btn.disabled = false;
+        }
+    });
+
+    // --- EVENT LISTENERS (menggantikan atribut onclick/onchange/onkeyup inline) ---
+    document.getElementById('filterTanggal').addEventListener('change', onDateChange);
+    document.getElementById('searchInput').addEventListener('input', searchTable);
+    document.getElementById('btn-back').addEventListener('click', () => toggleDetails(false));
+    document.getElementById('nav-dashboard').addEventListener('click', () => switchPage('dashboard'));
+    document.getElementById('nav-input').addEventListener('click', () => switchPage('input'));
+
+    const cardTotal = document.getElementById('card-total');
+    cardTotal.addEventListener('click', () => toggleDetails(true));
+    cardTotal.addEventListener('keydown', (e) => {
+        // Dukungan keyboard (Enter/Space) karena kartu ini pakai role="button"
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleDetails(true);
         }
     });
 
