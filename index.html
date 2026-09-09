@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pesanan Harian</title>
+    <title>Aplikasi Pesanan Fashion</title>
 
     <!-- ===== PWA: manifest, theme color, ikon ===== -->
     <link rel="manifest" href="manifest.json">
@@ -11,472 +11,365 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Pesanan Harian">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-    <link rel="apple-touch-icon" href="icon-192.png">
 
-    <!-- Library PapaParse sebagai cadangan (fallback) jika Apps Script mereturn format CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: #f3f4f6; 
             margin: 0; 
-            padding: 20px; 
+            padding: 0;
+            padding-bottom: 70px; /* Ruang untuk navigasi bawah */
         }
         .container { 
             max-width: 800px; 
-            margin: 0 auto; 
+            margin: 20px auto; 
             background: white; 
             padding: 20px 30px; 
             border-radius: 12px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+            width: 90%;
+            box-sizing: border-box;
         }
-        h1 { text-align: center; color: #1f2937; }
+        h1, h2 { text-align: center; color: #1f2937; margin-top: 0; }
         
-        /* Filter Tanggal di Dashboard */
-        .date-filter {
+        /* Navigasi Bawah ala Aplikasi HP */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-            gap: 10px;
-            font-weight: bold;
-            color: #4b5563;
+            justify-content: space-around;
+            z-index: 1000;
         }
-        .date-filter input {
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            font-size: 16px;
-            font-family: inherit;
-        }
-
-        /* Indikator status sinkronisasi otomatis */
-        .sync-status {
-            text-align: center;
-            font-size: 12px;
-            color: #9ca3af;
-            margin-bottom: 10px;
-            min-height: 16px;
-        }
-
-        /* Tampilan Dashboard */
-        #dashboard-view { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 20px 0 40px 0; 
-        }
-
-        /* Dua kotak ringkasan status: Pesanan Masuk & Terkirim */
-        .mini-cards {
-            display: flex;
-            gap: 15px;
-            width: 80%;
-            max-width: 400px;
-            margin-bottom: 20px;
-        }
-        .mini-card {
+        .nav-item {
             flex: 1;
-            border-radius: 12px;
-            padding: 18px 10px;
             text-align: center;
-            color: white;
-        }
-        .mini-card h3 {
-            margin: 0;
-            font-size: 13px;
+            padding: 15px 0;
+            color: #6b7280;
             font-weight: 600;
-            opacity: 0.95;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
         }
-        .mini-card .mini-number {
-            font-size: 38px;
-            font-weight: bold;
-            margin-top: 6px;
+        .nav-item.active {
+            color: #3b82f6;
+            border-top: 3px solid #3b82f6;
+            background: #f0f9ff;
         }
-        .mini-card-masuk { background: #f59e0b; box-shadow: 0 6px 10px -3px rgba(245,158,11,0.4); }
-        .mini-card-terkirim { background: #10b981; box-shadow: 0 6px 10px -3px rgba(16,185,129,0.4); }
 
-        .card { 
-            background: #3b82f6; 
-            color: white; 
-            padding: 30px 60px; 
-            border-radius: 16px; 
-            text-align: center; 
-            cursor: pointer; 
-            transition: all 0.2s ease-in-out; 
-            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4); 
-            width: 80%;
-            max-width: 400px;
+        /* --- CSS DASHBOARD --- */
+        .date-filter {
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: 10px; gap: 10px; font-weight: bold; color: #4b5563;
         }
-        .card:hover { transform: translateY(-5px); background: #2563eb; }
-        .card h2 { margin: 0; font-size: 20px; font-weight: 500; }
+        .date-filter input { padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 16px; }
+        .sync-status { text-align: center; font-size: 12px; color: #9ca3af; margin-bottom: 20px; }
+        
+        #dashboard-view { display: flex; flex-direction: column; align-items: center; }
+        .mini-cards { display: flex; gap: 15px; width: 100%; max-width: 400px; margin-bottom: 20px; }
+        .mini-card { flex: 1; border-radius: 12px; padding: 18px 10px; text-align: center; color: white; }
+        .mini-card h3 { margin: 0; font-size: 13px; text-transform: uppercase; }
+        .mini-card .mini-number { font-size: 38px; font-weight: bold; margin-top: 6px; }
+        .mini-card-masuk { background: #f59e0b; }
+        .mini-card-terkirim { background: #10b981; }
+
+        .card { background: #3b82f6; color: white; padding: 30px; border-radius: 16px; text-align: center; cursor: pointer; width: 100%; max-width: 340px; }
         .card .number { font-size: 72px; font-weight: bold; margin-top: 10px; }
         
-        /* Tampilan Rincian */
         #details-view { display: none; }
-        .details-header { display: flex; align-items: center; margin-bottom: 20px; }
-        .btn-back { 
-            background: #6b7280; color: white; border: none; padding: 10px 20px; 
-            border-radius: 8px; cursor: pointer; font-size: 15px; margin-right: 20px;
-        }
-        .btn-back:hover { background: #4b5563; }
-        .details-header h1 { margin: 0; font-size: 22px; }
-
-        /* Fitur Pencarian Rincian */
-        .search-container { margin-bottom: 15px; }
-        #searchInput {
-            width: 100%; padding: 12px 15px; border: 1px solid #d1d5db;
-            border-radius: 8px; font-size: 15px; box-sizing: border-box;
-        }
-        #searchInput:focus { outline: none; border-color: #3b82f6; }
-        
-        /* Desain Tabel */
+        .btn-back { background: #6b7280; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; margin-bottom:15px; }
+        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box; margin-bottom: 15px;}
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; }
+        th { background-color: #f9fafb; }
         .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { border: 1px solid #e5e7eb; padding: 14px; text-align: left; }
-        th { background-color: #f9fafb; font-weight: 600; color: #374151; }
-        tr:nth-child(even) { background-color: #f9fafb; }
-        tr:hover { background-color: #f3f4f6; }
-        
-        #loading-msg { text-align: center; color: #6b7280; font-style: italic; }
 
-        /* Tombol install PWA (mengambang) */
-        #install-btn {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #1f2937;
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            border-radius: 50px;
-            font-size: 15px;
-            font-weight: 600;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.25);
-            cursor: pointer;
-            z-index: 999;
-        }
-        #install-btn:hover { background: #111827; }
+        /* --- CSS FORM INPUT --- */
+        #input-view { display: none; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #4b5563; font-size: 14px;}
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; box-sizing: border-box;}
+        .row-flex { display: flex; gap: 15px; }
+        .col-flex { flex: 1; }
+        .btn-submit { width: 100%; background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-submit:disabled { background: #9ca3af; }
+        .alert { display: none; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: 600; }
+        .alert.success { background: #d1fae5; color: #065f46; display: block; }
+        .alert.error { background: #fee2e2; color: #991b1b; display: block; }
+
     </style>
 </head>
 <body>
 
-<div class="container">
-    
-    <!-- Bagian Filter Tanggal (Berlaku untuk Dashboard dan Tabel) -->
-    <div class="date-filter">
-        <label for="filterTanggal">Pesanan Tanggal:</label>
-        <input type="date" id="filterTanggal" onchange="onDateChange()">
-    </div>
-    <div class="sync-status" id="sync-status"></div>
-
-    <div id="loading-msg">Sedang mengambil data dari server, mohon tunggu...</div>
-
-    <!-- View 1: Dashboard Utama -->
-    <div id="dashboard-view" style="display: none;">
-
-        <!-- Ringkasan status pesanan -->
-        <div class="mini-cards">
-            <div class="mini-card mini-card-masuk">
-                <h3>Pesanan Masuk</h3>
-                <div class="mini-number" id="masuk-angka">0</div>
-            </div>
-            <div class="mini-card mini-card-terkirim">
-                <h3>Terkirim</h3>
-                <div class="mini-number" id="terkirim-angka">0</div>
-            </div>
-        </div>
-
-        <div class="card" onclick="toggleView('details-view')">
-            <h2>Total Produk Dipesan</h2>
-            <div class="number" id="total-angka">0</div>
-            <p style="margin-top:10px; font-size:14px; opacity:0.9;">Klik untuk melihat rincian variasi</p>
-        </div>
-    </div>
-
-    <!-- View 2: Tabel Rincian -->
-    <div id="details-view">
-        <div class="details-header">
-            <button class="btn-back" onclick="toggleView('dashboard-view')">← Kembali</button>
-            <h1>Rincian Pesanan</h1>
-        </div>
+<!-- HALAMAN 1: DASHBOARD & DETAIL -->
+<div id="page-dashboard">
+    <div class="container">
         
-        <!-- Kolom Pencarian -->
-        <div class="search-container">
-            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Cari berdasarkan Nama Produk atau Ukuran...">
+        <div id="dashboard-view">
+            <h1>Dashboard Harian</h1>
+            <div class="date-filter">
+                <input type="date" id="filterTanggal" onchange="onDateChange()">
+            </div>
+            <div class="sync-status" id="sync-status">Memuat data...</div>
+
+            <div class="mini-cards">
+                <div class="mini-card mini-card-masuk">
+                    <h3>Pesanan Masuk</h3>
+                    <div class="mini-number" id="masuk-angka">0</div>
+                </div>
+                <div class="mini-card mini-card-terkirim">
+                    <h3>Terkirim</h3>
+                    <div class="mini-number" id="terkirim-angka">0</div>
+                </div>
+            </div>
+
+            <div class="card" onclick="toggleDetails(true)">
+                <h2>Total Produk</h2>
+                <div class="number" id="total-angka">0</div>
+                <p style="margin-top:10px; font-size:14px;">Klik untuk rincian variasi</p>
+            </div>
         </div>
 
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tanggal</th>
-                        <th>ID Pesanan</th>
-                        <th>Nama Produk</th>
-                        <th>Ukuran</th>
-                        <th>Quantity</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                    <!-- Baris tabel masuk via Javascript -->
-                </tbody>
-            </table>
+        <div id="details-view">
+            <button class="btn-back" onclick="toggleDetails(false)">← Kembali ke Ringkasan</button>
+            <h2>Rincian Pesanan</h2>
+            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Cari Nama Produk / Ukuran...">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th><th>ID</th><th>Produk</th><th>Ukuran</th><th>Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
         </div>
+
     </div>
 </div>
 
-<button id="install-btn">📲 Install Aplikasi</button>
+<!-- HALAMAN 2: INPUT FORM -->
+<div id="page-input" style="display: none;">
+    <div class="container">
+        <h1>Input Pesanan Baru</h1>
+        <div id="alertBox" class="alert"></div>
+
+        <form id="orderForm">
+            <div class="row-flex">
+                <div class="form-group col-flex">
+                    <label>Tanggal</label>
+                    <input type="date" id="input_tanggal" required>
+                </div>
+                <div class="form-group col-flex">
+                    <label>ID Pesanan</label>
+                    <input type="text" id="id_pesanan" required readonly style="background-color: #f9fafb;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Nama Produk</label>
+                <input type="text" id="nama_produk" placeholder="Contoh: Diora Pants" required>
+            </div>
+
+            <div class="row-flex">
+                <div class="form-group col-flex">
+                    <label>Ukuran</label>
+                    <select id="ukuran" required>
+                        <option value="" disabled selected>Pilih Ukuran</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                        <option value="All Size">All Size</option>
+                    </select>
+                </div>
+                <div class="form-group col-flex">
+                    <label>Quantity</label>
+                    <input type="number" id="quantity" min="1" value="1" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Status</label>
+                <select id="status" required>
+                    <option value="Masuk">Masuk</option>
+                    <option value="Terkirim">Terkirim</option>
+                </select>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="btn-submit">Simpan Data</button>
+        </form>
+    </div>
+</div>
+
+<!-- NAVIGASI BAWAH -->
+<div class="bottom-nav">
+    <div class="nav-item active" id="nav-dashboard" onclick="switchPage('dashboard')">
+        📊<br>Dashboard
+    </div>
+    <div class="nav-item" id="nav-input" onclick="switchPage('input')">
+        📝<br>Input Data
+    </div>
+</div>
 
 <script>
-    // URL API Google Apps Script Baru Anda
-    const apiUrl = 'https://script.google.com/macros/s/AKfycbyDS8RsZlKDJ4l2kyscC_9QkN-rDQhtkfKGXyDwR8HG-GpCG93JTgud3zzmze0AB9p2/exec';
-
-    // Seberapa sering dashboard mengecek pembaruan data secara otomatis (ms)
-    const SYNC_INTERVAL_MS = 30000; // 30 detik
-
-    // Nama kolom & nilai yang dianggap sebagai "Terkirim". Kolom lain otomatis dihitung "Masuk".
-    // Sesuaikan bagian ini jika nama kolom status di spreadsheet Anda berbeda.
-    const STATUS_FIELD = 'Status';
-    const TERKIRIM_KEYWORDS = ['terkirim', 'kirim', 'sent', 'selesai'];
-    
-    // Variabel untuk menyimpan semua data mentah dari Spreadsheet (bertindak sebagai cache di memori)
+    // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyDS8RsZlKDJ4l2kyscC_9QkN-rDQhtkfKGXyDwR8HG-GpCG93JTgud3zzmze0AB9p2/exec';
     let allData = [];
-    let syncTimer = null;
 
-    // Fungsi otomatis mendapatkan format tanggal hari ini (YYYY-MM-DD)
-    function getTodayDate() {
+    // --- FUNGSI NAVIGASI BAWAH ---
+    function switchPage(page) {
+        if(page === 'dashboard') {
+            document.getElementById('page-dashboard').style.display = 'block';
+            document.getElementById('page-input').style.display = 'none';
+            document.getElementById('nav-dashboard').classList.add('active');
+            document.getElementById('nav-input').classList.remove('active');
+            syncData(); // Otomatis refresh data saat buka dashboard
+        } else {
+            document.getElementById('page-dashboard').style.display = 'none';
+            document.getElementById('page-input').style.display = 'block';
+            document.getElementById('nav-dashboard').classList.remove('active');
+            document.getElementById('nav-input').classList.add('active');
+            generateID(); // Buat ID baru saat buka tab input
+        }
+    }
+
+    function toggleDetails(show) {
+        document.getElementById('dashboard-view').style.display = show ? 'none' : 'flex';
+        document.getElementById('details-view').style.display = show ? 'block' : 'none';
+        if(!show) document.getElementById('searchInput').value = ''; searchTable();
+    }
+
+    // --- SETUP TANGGAL HARI INI ---
+    function getToday() {
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         return `${yyyy}-${mm}-${dd}`;
     }
+    document.getElementById('filterTanggal').value = getToday();
+    document.getElementById('input_tanggal').value = getToday();
 
-    // Set kalender default ke hari ini
-    document.getElementById('filterTanggal').value = getTodayDate();
-
-    // Fungsi mengambil data terbaru dari Apps Script.
-    // isInitial=true  -> pemuatan pertama kali (boleh menampilkan pesan loading/error)
-    // isInitial=false -> sinkronisasi latar belakang (TIDAK PERNAH menghapus data yang sudah tampil,
-    //                     kalau gagal cukup dicatat di console dan cache lama tetap dipakai)
-    async function syncData(isInitial) {
+    // --- LOGIK DASHBOARD (Ambil Data) ---
+    async function syncData() {
         try {
-            // cache: 'no-store' memastikan kita selalu ambil data terbaru dari server, bukan dari cache browser
-            const response = await fetch(apiUrl, { cache: 'no-store' });
+            document.getElementById('sync-status').innerText = 'Menyinkronkan data...';
+            const response = await fetch(API_URL, { cache: 'no-store' });
             const text = await response.text();
-
-            let newData;
-            // Mencoba mendeteksi jika response JSON atau CSV
+            
             try {
                 let json = JSON.parse(text);
-                newData = Array.isArray(json) ? json : (json.data || []);
+                allData = Array.isArray(json) ? json : (json.data || []);
             } catch (e) {
-                // Jika error parse JSON, asumsikan output berupa CSV
-                newData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+                allData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
             }
-
-            // Baru timpa cache setelah data baru berhasil didapat & diparse
-            allData = newData;
-
-            if (isInitial) {
-                document.getElementById('loading-msg').style.display = 'none';
-                document.getElementById('dashboard-view').style.display = 'flex';
-            }
-
-            // Saat sinkron latar belakang, filter tanggal & pencarian yang sedang aktif tetap dipertahankan
-            filterAndDisplay(isInitial);
-            setSyncStatus('Tersinkron ' + new Date().toLocaleTimeString('id-ID'));
-
+            
+            document.getElementById('sync-status').innerText = 'Tersinkron: ' + new Date().toLocaleTimeString('id-ID');
+            filterAndDisplay();
         } catch (error) {
-            console.error('Gagal sinkronisasi:', error);
-            if (isInitial) {
-                document.getElementById('loading-msg').innerText = 'Gagal mengambil data. Pastikan API Apps Script berjalan normal.';
-                document.getElementById('loading-msg').style.color = 'red';
-            } else {
-                // Sinkron berkala gagal -> biarkan data/cache yang sudah tampil, jangan dihapus
-                setSyncStatus('Sinkron gagal, menampilkan data terakhir');
-            }
+            document.getElementById('sync-status').innerText = 'Gagal memuat data.';
         }
     }
 
-    function setSyncStatus(msg) {
-        const el = document.getElementById('sync-status');
-        if (el) el.innerText = msg;
-    }
+    function onDateChange() { filterAndDisplay(); }
 
-    // Menjalankan sinkronisasi otomatis berkala
-    function startAutoSync() {
-        if (syncTimer) clearInterval(syncTimer);
-        syncTimer = setInterval(() => syncData(false), SYNC_INTERVAL_MS);
-    }
-
-    // Saat tab dibuka/aktif kembali, langsung sinkron (selain menunggu interval berkala)
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            syncData(false);
-        }
-    });
-
-    // Dipanggil saat user mengganti tanggal secara manual -> wajar untuk reset pencarian
-    function onDateChange() {
-        filterAndDisplay(true);
-    }
-
-    // Menghitung ringkasan status pesanan (Masuk vs Terkirim) berdasarkan ID Pesanan unik
-    function computeStatusSummary(data) {
-        const idsMasuk = new Set();
-        const idsTerkirim = new Set();
-
-        data.forEach(row => {
-            const rawStatus = (row[STATUS_FIELD] || '').toString().trim().toLowerCase();
-            const id = row['ID'] || JSON.stringify(row);
-            const isTerkirim = TERKIRIM_KEYWORDS.some(k => rawStatus.includes(k));
-            if (isTerkirim) {
-                idsTerkirim.add(id);
-            } else {
-                idsMasuk.add(id);
-            }
-        });
-
-        return { masuk: idsMasuk.size, terkirim: idsTerkirim.size };
-    }
-
-    // Fungsi menyaring (filter) data sesuai tanggal kalender yang dipilih
-    // resetSearch=true saat ganti tanggal manual, false saat sinkron otomatis (agar pencarian tidak hilang)
-    function filterAndDisplay(resetSearch) {
-        const selectedDate = document.getElementById('filterTanggal').value; // format YYYY-MM-DD
-        let totalQuantity = 0;
+    function filterAndDisplay() {
+        const selectedDate = document.getElementById('filterTanggal').value;
+        let totalQty = 0, countMasuk = 0, countTerkirim = 0;
         let tableHTML = '';
+        const idsMasuk = new Set(), idsTerkirim = new Set();
 
-        // Saring data
-        const filteredData = allData.filter(row => {
-            if(!row['Tanggal']) return false;
-
-            // Mengakali format tanggal dari Sheets agar bersih menjadi YYYY-MM-DD
-            let rawDate = row['Tanggal'].toString().trim();
-            let rowDate = "";
+        allData.forEach(row => {
+            if(!row['Tanggal']) return;
+            let rawDate = row['Tanggal'].toString();
+            let rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
             
-            if (rawDate.includes('T') && rawDate.endsWith('Z')) {
-                // Format ISO dari Google Apps Script UTC
-                let d = new Date(rawDate);
-                let yyyy = d.getFullYear();
-                let mm = String(d.getMonth() + 1).padStart(2, '0');
-                let dd = String(d.getDate()).padStart(2, '0');
-                rowDate = `${yyyy}-${mm}-${dd}`;
-            } else {
-                // Jika formatnya sudah teks string YYYY-MM-DD (membuang jam)
-                rowDate = rawDate.split('T')[0].split(' ')[0];
+            if (rowDate === selectedDate) {
+                const qty = parseInt(row['Quantity']) || 0;
+                totalQty += qty;
+                
+                const status = (row['Status'] || '').toLowerCase();
+                const id = row['ID'] || JSON.stringify(row);
+                if (status.includes('terkirim') || status.includes('kirim')) idsTerkirim.add(id);
+                else idsMasuk.add(id);
+
+                tableHTML += `<tr>
+                    <td>${rowDate}</td><td>${row['ID']||'-'}</td>
+                    <td>${row['Nama Produk']||'-'}</td><td>${row['Ukuran']||'-'}</td><td>${qty}</td>
+                </tr>`;
             }
-            
-            return rowDate === selectedDate;
         });
 
-        // Generate baris tabel dan hitung total
-        filteredData.forEach(row => {
-            const qty = parseInt(row['Quantity']) || 0;
-            totalQuantity += qty; 
-            
-            tableHTML += `
-                <tr>
-                    <td>${row['Tanggal'] ? row['Tanggal'].toString().split('T')[0] : '-'}</td>
-                    <td>${row['ID'] || '-'}</td>
-                    <td>${row['Nama Produk'] || '-'}</td>
-                    <td>${row['Ukuran'] || '-'}</td>
-                    <td>${qty}</td>
-                </tr>
-            `;
-        });
-
-        // Update kotak ringkasan Pesanan Masuk & Terkirim
-        const statusSummary = computeStatusSummary(filteredData);
-        document.getElementById('masuk-angka').innerText = statusSummary.masuk;
-        document.getElementById('terkirim-angka').innerText = statusSummary.terkirim;
-
-        // Update ke HTML
-        document.getElementById('total-angka').innerText = totalQuantity;
-        document.getElementById('table-body').innerHTML = tableHTML || `<tr><td colspan="5" style="text-align:center;">Tidak ada pesanan pada tanggal ${selectedDate}</td></tr>`;
-        
-        if (resetSearch) {
-            document.getElementById('searchInput').value = '';
-        }
+        document.getElementById('masuk-angka').innerText = idsMasuk.size;
+        document.getElementById('terkirim-angka').innerText = idsTerkirim.size;
+        document.getElementById('total-angka').innerText = totalQty;
+        document.getElementById('table-body').innerHTML = tableHTML || `<tr><td colspan="5" style="text-align:center;">Tidak ada pesanan</td></tr>`;
         searchTable();
     }
 
-    // Fungsi Filter/Pencarian dalam Tabel (Search Bar)
     function searchTable() {
         let input = document.getElementById("searchInput").value.toLowerCase();
         let tr = document.getElementById("table-body").getElementsByTagName("tr");
-
         for (let i = 0; i < tr.length; i++) {
-            // Index 2 = Nama Produk, Index 3 = Ukuran
             let tdNama = tr[i].getElementsByTagName("td")[2];
             let tdUkuran = tr[i].getElementsByTagName("td")[3];
-            
             if (tdNama && tdUkuran) {
-                let txtValueNama = tdNama.textContent || tdNama.innerText;
-                let txtValueUkuran = tdUkuran.textContent || tdUkuran.innerText;
-                
-                if (txtValueNama.toLowerCase().indexOf(input) > -1 || txtValueUkuran.toLowerCase().indexOf(input) > -1) {
-                    tr[i].style.display = "";
-                } else {
-                    tr[i].style.display = "none";
-                }
+                let txt = (tdNama.textContent + " " + tdUkuran.textContent).toLowerCase();
+                tr[i].style.display = txt.includes(input) ? "" : "none";
             }       
         }
     }
 
-    // Fungsi navigasi halaman Dashboard <-> Detail
-    function toggleView(viewId) {
-        document.getElementById('dashboard-view').style.display = viewId === 'dashboard-view' ? 'flex' : 'none';
-        document.getElementById('details-view').style.display = viewId === 'details-view' ? 'block' : 'none';
-        
-        if(viewId === 'dashboard-view') {
-            document.getElementById('searchInput').value = '';
-            searchTable(); 
-        }
+    // --- LOGIK INPUT (Kirim Data) ---
+    function generateID() {
+        document.getElementById('id_pesanan').value = 'INV-' + Math.floor(Date.now() / 1000);
     }
 
-    // ===== PWA: registrasi Service Worker =====
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .catch(err => console.error('Gagal daftar service worker:', err));
-        });
-    }
-
-    // ===== PWA: tombol Install kustom =====
-    let deferredInstallPrompt = null;
-    const installBtn = document.getElementById('install-btn');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        deferredInstallPrompt = e;
-        installBtn.style.display = 'block';
+        const btn = document.getElementById('btnSubmit');
+        const alertBox = document.getElementById('alertBox');
+        
+        const payload = {
+            tanggal: document.getElementById('input_tanggal').value,
+            id: document.getElementById('id_pesanan').value,
+            namaProduk: document.getElementById('nama_produk').value,
+            ukuran: document.getElementById('ukuran').value,
+            quantity: document.getElementById('quantity').value,
+            status: document.getElementById('status').value
+        };
+
+        btn.innerText = "Menyimpan..."; btn.disabled = true; alertBox.className = "alert";
+        
+        try {
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const result = await res.json();
+            if(result.status === 'success') {
+                alertBox.innerText = "✅ Berhasil disimpan!";
+                alertBox.className = "alert success";
+                document.getElementById('nama_produk').value = '';
+                document.getElementById('ukuran').value = '';
+                document.getElementById('quantity').value = '1';
+                generateID();
+                syncData(); // Sinkron data di background agar dashboard update
+            } else throw new Error(result.message);
+        } catch (error) {
+            alertBox.innerText = "❌ Gagal: " + error.message;
+            alertBox.className = "alert error";
+        } finally {
+            btn.innerText = "Simpan Data"; btn.disabled = false;
+        }
     });
 
-    installBtn.addEventListener('click', async () => {
-        if (!deferredInstallPrompt) return;
-        installBtn.style.display = 'none';
-        deferredInstallPrompt.prompt();
-        await deferredInstallPrompt.userChoice;
-        deferredInstallPrompt = null;
-    });
-
-    window.addEventListener('appinstalled', () => {
-        installBtn.style.display = 'none';
-        deferredInstallPrompt = null;
-    });
-
-    // Jalankan saat web dimuat: ambil data awal, lalu mulai sinkron otomatis berkala
-    window.onload = function() {
-        syncData(true).then(startAutoSync);
-    };
+    // Mulai
+    window.onload = () => { syncData(); setInterval(syncData, 30000); };
 </script>
 </body>
 </html>
