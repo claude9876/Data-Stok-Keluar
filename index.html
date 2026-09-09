@@ -232,7 +232,28 @@
 <script>
     // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
     const API_URL = 'https://script.google.com/macros/s/AKfycbzB-IuJgdacXzyYvFdfIBLLF8yMYztahF7UaCyvjjhhbn7gNdKbD-_EI9yjucicIQrl/exec';
+    const SYNC_INTERVAL_MS = 5000; // Interval polling realtime (5 detik)
+    const FETCH_TIMEOUT_MS = 15000; // Batas waktu tunggu request (15 detik) agar tidak macet selamanya
     let allData = [];
+    let isSyncing = false;
+
+    // Mencegah karakter HTML dari spreadsheet merusak tampilan / jadi celah XSS
+    function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = (str === null || str === undefined) ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    // fetch dengan batas waktu, supaya kalau server tidak merespons, tidak menggantung selamanya
+    async function fetchWithTimeout(url, options = {}) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        try {
+            return await fetch(url, { ...options, signal: controller.signal });
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
 
     // --- FUNGSI NAVIGASI BAWAH ---
     function switchPage(page) {
@@ -254,7 +275,10 @@
     function toggleDetails(show) {
         document.getElementById('dashboard-view').style.display = show ? 'none' : 'flex';
         document.getElementById('details-view').style.display = show ? 'block' : 'none';
-        if(!show) document.getElementById('searchInput').value = ''; searchTable();
+        if (!show) {
+            document.getElementById('searchInput').value = '';
+        }
+        searchTable();
     }
 
     // --- SETUP TANGGAL HARI INI ---
@@ -270,9 +294,12 @@
 
     // --- LOGIK DASHBOARD (Ambil Data) ---
     async function syncData() {
+        if (isSyncing) return; // Cegah request tumpang tindih jika sync sebelumnya belum selesai
+        isSyncing = true;
         try {
-            document.getElementById('sync-status').innerText = 'Menyinkronkan data...';
-            const response = await fetch(API_URL, { cache: 'no-store' });
+            document.getElementById('sync-status').innerText = '🔄 Menyinkronkan data...';
+            const response = await fetchWithTimeout(API_URL, { cache: 'no-store' });
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             const text = await response.text();
             
             try {
@@ -282,10 +309,13 @@
                 allData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
             }
             
-            document.getElementById('sync-status').innerText = 'Tersinkron: ' + new Date().toLocaleTimeString('id-ID');
+            document.getElementById('sync-status').innerText = '🟢 Live • Tersinkron ' + new Date().toLocaleTimeString('id-ID');
             filterAndDisplay();
         } catch (error) {
-            document.getElementById('sync-status').innerText = 'Gagal memuat data.';
+            const pesan = (error.name === 'AbortError') ? 'server tidak merespons' : error.message;
+            document.getElementById('sync-status').innerText = '🔴 Gagal sinkron (' + pesan + '), mencoba lagi...';
+        } finally {
+            isSyncing = false;
         }
     }
 
@@ -293,7 +323,7 @@
 
     function filterAndDisplay() {
         const selectedDate = document.getElementById('filterTanggal').value;
-        let totalQty = 0, countMasuk = 0, countTerkirim = 0;
+        let totalQty = 0;
         let tableHTML = '';
         const idsMasuk = new Set(), idsTerkirim = new Set();
 
@@ -312,8 +342,8 @@
                 else idsMasuk.add(id);
 
                 tableHTML += `<tr>
-                    <td>${rowDate}</td><td>${row['ID']||'-'}</td>
-                    <td>${row['Nama Produk']||'-'}</td><td>${row['Ukuran']||'-'}</td><td>${qty}</td>
+                    <td>${escapeHTML(rowDate)}</td><td>${escapeHTML(row['ID'] || '-')}</td>
+                    <td>${escapeHTML(row['Nama Produk'] || '-')}</td><td>${escapeHTML(row['Warna'] || '-')}</td><td>${escapeHTML(row['Ukuran'] || '-')}</td><td>${qty}</td>
                 </tr>`;
             }
         });
@@ -321,7 +351,7 @@
         document.getElementById('masuk-angka').innerText = idsMasuk.size;
         document.getElementById('terkirim-angka').innerText = idsTerkirim.size;
         document.getElementById('total-angka').innerText = totalQty;
-        document.getElementById('table-body').innerHTML = tableHTML || `<tr><td colspan="5" style="text-align:center;">Tidak ada pesanan</td></tr>`;
+        document.getElementById('table-body').innerHTML = tableHTML || `<tr><td colspan="6" style="text-align:center;">Tidak ada pesanan</td></tr>`;
         searchTable();
     }
 
@@ -330,7 +360,7 @@
         let tr = document.getElementById("table-body").getElementsByTagName("tr");
         for (let i = 0; i < tr.length; i++) {
             let tdNama = tr[i].getElementsByTagName("td")[2];
-            let tdUkuran = tr[i].getElementsByTagName("td")[3];
+            let tdUkuran = tr[i].getElementsByTagName("td")[4];
             if (tdNama && tdUkuran) {
                 let txt = (tdNama.textContent + " " + tdUkuran.textContent).toLowerCase();
                 tr[i].style.display = txt.includes(input) ? "" : "none";
@@ -340,47 +370,88 @@
 
     // --- LOGIK INPUT (Kirim Data) ---
     function generateID() {
-        document.getElementById('id_pesanan').value = 'INV-' + Math.floor(Date.now() / 1000);
+        const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+        document.getElementById('id_pesanan').value = 'INV-' + Date.now() + '-' + rand;
     }
 
     document.getElementById('orderForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = document.getElementById('btnSubmit');
         const alertBox = document.getElementById('alertBox');
+
+        const namaProduk = document.getElementById('nama_produk').value.trim();
+        const warna = document.getElementById('warna').value.trim();
+        const ukuran = document.getElementById('ukuran').value;
+        const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+        // Validasi cadangan di JS (jaga-jaga jika validasi bawaan browser tidak jalan, misal di webview HP tertentu)
+        if (!namaProduk || !warna || !ukuran) {
+            alertBox.innerText = "⚠️ Nama produk, warna, dan ukuran wajib diisi.";
+            alertBox.className = "alert error";
+            return;
+        }
+        if (!quantity || quantity < 1) {
+            alertBox.innerText = "⚠️ Quantity harus angka lebih dari 0.";
+            alertBox.className = "alert error";
+            return;
+        }
         
         const payload = {
             tanggal: document.getElementById('input_tanggal').value,
             id: document.getElementById('id_pesanan').value,
-            namaProduk: document.getElementById('nama_produk').value,
-            ukuran: document.getElementById('ukuran').value,
-            quantity: document.getElementById('quantity').value,
+            namaProduk: namaProduk,
+            warna: warna,
+            ukuran: ukuran,
+            quantity: quantity,
             status: document.getElementById('status').value
         };
 
         btn.innerText = "Menyimpan..."; btn.disabled = true; alertBox.className = "alert";
         
         try {
-            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const res = await fetchWithTimeout(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
             const result = await res.json();
             if(result.status === 'success') {
                 alertBox.innerText = "✅ Berhasil disimpan!";
                 alertBox.className = "alert success";
                 document.getElementById('nama_produk').value = '';
+                document.getElementById('warna').value = '';
                 document.getElementById('ukuran').value = '';
                 document.getElementById('quantity').value = '1';
                 generateID();
                 syncData(); // Sinkron data di background agar dashboard update
-            } else throw new Error(result.message);
+            } else throw new Error(result.message || 'Respon server tidak dikenali.');
         } catch (error) {
-            alertBox.innerText = "❌ Gagal: " + error.message;
+            const pesan = (error.name === 'AbortError') ? 'Waktu tunggu habis, coba lagi.' : error.message;
+            alertBox.innerText = "❌ Gagal: " + pesan;
             alertBox.className = "alert error";
         } finally {
             btn.innerText = "Simpan Data"; btn.disabled = false;
         }
     });
 
-    // Mulai
-    window.onload = () => { syncData(); setInterval(syncData, 30000); };
+    // Mulai + Sinkronisasi Realtime
+    window.onload = () => {
+        syncData();
+        setInterval(syncData, SYNC_INTERVAL_MS); // Polling otomatis tiap beberapa detik
+
+        // Sinkron instan begitu tab/aplikasi dibuka kembali (misal setelah minimize/pindah tab)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') syncData();
+        });
+
+        // Sinkron instan begitu koneksi internet kembali online
+        window.addEventListener('online', syncData);
+
+        // Tampilkan status begitu koneksi terputus, tanpa menunggu fetch gagal dulu
+        window.addEventListener('offline', () => {
+            document.getElementById('sync-status').innerText = '🔴 Offline — menunggu koneksi...';
+        });
+
+        // Sinkron instan begitu jendela/aplikasi mendapat fokus kembali
+        window.addEventListener('focus', syncData);
+    };
 </script>
 </body>
 </html>
