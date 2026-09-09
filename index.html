@@ -63,7 +63,7 @@
         .bg-terkirim { background: linear-gradient(135deg, #10b981, #059669); }
         .bg-total { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); grid-column: span 2; cursor: pointer; }
 
-        /* --- 4. TABS & ORDER CARDS --- */
+        /* --- 4. TABS & ORDER CARDS DENGAN FOTO PRODUK --- */
         .detail-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
         .detail-header h2 { margin: 0; flex: 1; text-align: left; }
         
@@ -89,13 +89,26 @@
         .badge-warning { background: #fef3c7; color: #d97706; }
         .badge-success { background: #d1fae5; color: #059669; }
         
-        .order-card-body { font-size: 14px; color: var(--text-main); line-height: 1.5; }
-        .order-card-body .product-name { font-weight: 600; font-size: 15px; color: var(--primary); }
-        .order-card-body .variant { color: var(--text-muted); font-size: 13px; }
+        .order-card-body { padding-top: 5px; }
         
-        .order-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 13px; }
-        .qty-box { background: #f3f4f6; padding: 4px 10px; border-radius: 6px; font-weight: bold; }
-        .resi-box { color: var(--text-muted); font-family: monospace; }
+        /* Desain Baris Item dengan Foto */
+        .grouped-item { 
+            padding: 12px 0; border-bottom: 1px dashed #f3f4f6; 
+            display: flex; gap: 12px; align-items: center; 
+        }
+        .grouped-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .grouped-item-img { 
+            width: 45px; height: 45px; border-radius: 8px; 
+            object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; background: #f9fafb;
+        }
+        .grouped-item-info { flex: 1; }
+        .grouped-item-info .product-name { font-weight: 600; font-size: 14px; color: var(--primary); margin-bottom: 2px; }
+        .grouped-item-info .variant { color: var(--text-muted); font-size: 13px; }
+        .qty-inline { font-weight: bold; color: var(--text-main); background: #f3f4f6; padding: 4px 8px; border-radius: 6px; font-size: 12px; }
+        
+        .order-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 13px; border-top: 1px solid var(--border); padding-top: 10px;}
+        .qty-box { background: #eff6ff; color: var(--primary); padding: 4px 10px; border-radius: 6px; font-weight: bold; border: 1px solid #bfdbfe;}
+        .resi-box { color: var(--text-muted); font-family: monospace; font-weight: bold;}
 
         .empty-state { text-align: center; padding: 30px; color: var(--text-muted); background: #f9fafb; border-radius: 10px; border: 1px dashed var(--border); }
 
@@ -115,11 +128,11 @@
         .section-divider { border: 0; border-top: 2px dashed var(--border); margin: 20px 0; }
         .section-title { font-size: 15px; font-weight: bold; color: var(--text-muted); margin-bottom: 15px; text-transform: uppercase; }
 
-        .cart-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
-        .cart-item-detail { display: flex; flex-direction: column; }
+        .cart-item { display: flex; gap: 10px; align-items: center; background: #fff; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
+        .cart-item-detail { display: flex; flex-direction: column; flex: 1; }
         .cart-item-title { font-weight: bold; color: var(--text-main); font-size: 14px;}
         .cart-item-variant { font-size: 12px; color: var(--text-muted); }
-        .btn-remove { background: #fee2e2; color: #dc2626; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .btn-remove { background: #fee2e2; color: #dc2626; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
 
         /* --- 6. TOAST & BOTTOM NAV --- */
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
@@ -262,7 +275,8 @@
                     <input type="text" id="warna" list="daftar-warna" placeholder="Contoh: Hitam, Maroon" required>
                     <datalist id="daftar-warna">
                         <option value="Hitam"><option value="Putih"><option value="Maroon">
-                        <option value="Navy"><option value="Cream">
+                        <option value="Cokelat"><option value="Kuning"><option value="Soft Blue">
+                        <option value="Navy"><option value="Cream"><option value="Ungu">
                     </datalist>
                 </div>
 
@@ -284,7 +298,6 @@
                     </div>
                 </div>
 
-                <!-- Tombol Submit Form (Diubah fungsionalitasnya untuk tambah ke keranjang) -->
                 <button type="submit" id="btnAddToCart" class="btn btn-add">➕ Tambah ke Daftar Variasi</button>
             </form>
             
@@ -316,7 +329,6 @@
  * STRUKTUR APLIKASI MODULAR
  */
 
-// 1. CONFIGURATION
 const Config = {
     API_URL: 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec',
     SYNC_INTERVAL: 60000,
@@ -324,16 +336,14 @@ const Config = {
     CACHE_KEY: 'fashion_orders_cache'
 };
 
-// 2. STATE MANAGEMENT
 const State = {
     allData: [],
     isSyncing: false,
     selectedDate: '',
     currentTabStatus: 'all',
-    cart: [] // Penyimpanan sementara (Keranjang)
+    cart: [] 
 };
 
-// 3. UTILITIES
 const Utils = {
     escapeHTML: (str) => {
         const div = document.createElement('div');
@@ -346,10 +356,44 @@ const Utils = {
     },
     generateOrderID: () => {
         return 'INV-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    },
+    
+    // 🔥 SISTEM FOTO PRODUK OTOMATIS BERDASARKAN WARNA
+    getProductImage: (produk, warna) => {
+        let w = (warna || '').toLowerCase();
+        
+        // 1. DAFTAR LINK FOTO ASLI (Otomatis menyesuaikan warna apapun produknya)
+        const fotoReal = {
+            "hitam": "https://down-id.img.susercontent.com/file/id-11134207-81zte-msjtzri73oxt92@resize_w1080_nl.webp",
+            "putih": "https://down-id.img.susercontent.com/file/id-11134207-81ztp-msjtzri4err6bf@resize_w1080_nl.webp",
+            "maroon": "https://down-id.img.susercontent.com/file/id-11134207-81ztg-msjtzri4g6bmd4@resize_w1080_nl.webp",
+            "cokelat": "https://down-id.img.susercontent.com/file/id-11134207-81ztk-msjtzri4hkw255@resize_w1080_nl.webp",
+            "kuning": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
+            "soft blue": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp",
+            "ungu": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp" // Disamakan dengan soft blue
+        };
+
+        // Cek apakah input warna dari pengguna cocok dengan daftar foto di atas
+        for (const [keyColor, urlFoto] of Object.entries(fotoReal)) {
+            if (w.includes(keyColor)) {
+                return urlFoto;
+            }
+        }
+
+        // 2. JIKA WARNA LAIN DIINPUT, BUAT KOTAK WARNA STANDAR OTOMATIS
+        let bgHex = "e5e7eb"; 
+        let txtHex = "374151";
+
+        if (w.includes('navy') || w.includes('biru')) { bgHex = "1e3a8a"; txtHex = "ffffff"; }
+        else if (w.includes('cream') || w.includes('krem')) { bgHex = "fef3c7"; txtHex = "92400e"; }
+        else if (w.includes('hijau') || w.includes('green')) { bgHex = "166534"; txtHex = "ffffff"; }
+        else if (w.includes('pink') || w.includes('merah muda')) { bgHex = "fbcfe8"; txtHex = "831843"; }
+
+        const initial = w ? w.charAt(0).toUpperCase() : 'B'; 
+        return `https://ui-avatars.com/api/?name=${initial}&background=${bgHex}&color=${txtHex}&size=100&bold=true&font-size=0.6`;
     }
 };
 
-// 4. API HANDLER
 const API = {
     async fetchWithTimeout(url, options = {}) {
         const controller = new AbortController();
@@ -405,7 +449,6 @@ const API = {
     }
 };
 
-// 5. USER INTERFACE (UI) HANDLER
 const UI = {
     init() {
         State.selectedDate = Utils.getToday();
@@ -489,12 +532,16 @@ const UI = {
         }
     },
 
+    // RENDER DASHBOARD (Mengelompokkan ID & Menampilkan Foto Asli)
     renderDashboard() {
         let totalQty = 0;
-        let uniqueMasuk = new Set();
-        let uniqueTerkirim = new Set();
+        let countMasuk = 0;
+        let countTerkirim = 0;
         let listHTML = '';
 
+        const groupedOrders = {};
+
+        // Pengelompokan Data
         State.allData.forEach(row => {
             if (!row['Tanggal']) return;
             const rawDate = String(row['Tanggal']);
@@ -502,57 +549,84 @@ const UI = {
             
             if (rowDate === State.selectedDate) {
                 const qty = parseInt(row['Quantity']) || 0;
-                totalQty += qty;
+                totalQty += qty; 
                 
-                const id = row['ID'] || JSON.stringify(row); // Mengambil ID pesanan untuk hitung pesanan unik
+                const id = row['ID'] || JSON.stringify(row); 
                 const status = (row['Status'] || '').toLowerCase();
                 const isTerkirim = status.includes('terkirim') || status.includes('kirim');
                 
-                // Menghitung berdasarkan ID Unik (Invoice)
-                if (isTerkirim) {
-                    uniqueTerkirim.add(id);
-                } else {
-                    uniqueMasuk.add(id);
+                if (!groupedOrders[id]) {
+                    groupedOrders[id] = {
+                        id: id,
+                        platform: Utils.escapeHTML(row['Platform'] || '-'),
+                        pembeli: Utils.escapeHTML(row['Nama Pembeli'] || row['ID'] || 'Tanpa Nama'),
+                        statusText: isTerkirim ? 'terkirim' : 'masuk',
+                        isTerkirim: isTerkirim,
+                        resi: Utils.escapeHTML(row['Resi'] || ''),
+                        items: [],
+                        totalOrderQty: 0
+                    };
                 }
 
-                let platform = Utils.escapeHTML(row['Platform'] || '-');
-                let pembeli = Utils.escapeHTML(row['Nama Pembeli'] || row['ID'] || 'Tanpa Nama');
-                let produk = Utils.escapeHTML(row['Nama Produk'] || '-');
-                let warna = Utils.escapeHTML(row['Warna'] || '-');
-                let ukuran = Utils.escapeHTML(row['Ukuran'] || '-');
-                let resi = Utils.escapeHTML(row['Resi'] || '');
-
-                let badgeStatus = isTerkirim 
-                    ? `<span class="badge badge-success">Dikirim</span>` 
-                    : `<span class="badge badge-warning">Perlu Dikirim</span>`;
+                groupedOrders[id].items.push({
+                    produk: Utils.escapeHTML(row['Nama Produk'] || '-'),
+                    warna: Utils.escapeHTML(row['Warna'] || '-'),
+                    ukuran: Utils.escapeHTML(row['Ukuran'] || '-'),
+                    qty: qty
+                });
                 
-                let dataStatusVal = isTerkirim ? 'terkirim' : 'masuk';
-
-                listHTML += `
-                <div class="order-card" data-status="${dataStatusVal}">
-                    <div class="order-card-header">
-                        <div class="buyer-info">
-                            <span class="badge badge-platform">${platform}</span>
-                            <strong>${pembeli}</strong>
-                        </div>
-                        <div>${badgeStatus}</div>
-                    </div>
-                    <div class="order-card-body">
-                        <div class="product-name">${produk}</div>
-                        <div class="variant">Warna: ${warna} | Ukuran: ${ukuran}</div>
-                    </div>
-                    <div class="order-card-footer">
-                        <span class="qty-box">Qty: ${qty}</span>
-                        ${resi ? `<span class="resi-box">Resi: ${resi}</span>` : ''}
-                    </div>
-                </div>`;
+                groupedOrders[id].totalOrderQty += qty;
             }
         });
 
-        // Update angka di dashboard berdasarkan ID unik (bukan per baris/warna)
-        document.getElementById('stat-masuk').innerText = uniqueMasuk.size;
-        document.getElementById('stat-terkirim').innerText = uniqueTerkirim.size;
-        document.getElementById('stat-total').innerText = totalQty; // Tetap hitung total qty produk
+        // Merender Data dengan Foto
+        Object.values(groupedOrders).forEach(order => {
+            if (order.isTerkirim) countTerkirim++;
+            else countMasuk++;
+
+            let badgeStatus = order.isTerkirim 
+                ? `<span class="badge badge-success">Dikirim</span>` 
+                : `<span class="badge badge-warning">Perlu Dikirim</span>`;
+            
+            let itemsHTML = '';
+            order.items.forEach(item => {
+                const imgURL = Utils.getProductImage(item.produk, item.warna); // Ambil link foto sesuai warna
+                
+                itemsHTML += `
+                <div class="grouped-item">
+                    <img src="${imgURL}" alt="${item.warna}" class="grouped-item-img" loading="lazy">
+                    <div class="grouped-item-info">
+                        <div class="product-name">${item.produk}</div>
+                        <div class="variant">Warna: ${item.warna} | Ukuran: ${item.ukuran}</div>
+                    </div>
+                    <div class="qty-inline">x${item.qty}</div>
+                </div>`;
+            });
+
+            listHTML += `
+            <div class="order-card" data-status="${order.statusText}">
+                <div class="order-card-header">
+                    <div class="buyer-info">
+                        <span class="badge badge-platform">${order.platform}</span>
+                        <strong>${order.pembeli}</strong>
+                    </div>
+                    <div>${badgeStatus}</div>
+                </div>
+                
+                <div class="order-card-body">
+                    ${itemsHTML}
+                </div>
+                
+                <div class="order-card-footer">
+                    <span class="qty-box">Total Qty: ${order.totalOrderQty} pcs</span>
+                    ${order.resi ? `<span class="resi-box">Resi: ${order.resi}</span>` : ''}
+                </div>
+            </div>`;
+        });
+
+        document.getElementById('stat-masuk').innerText = countMasuk;
+        document.getElementById('stat-terkirim').innerText = countTerkirim;
+        document.getElementById('stat-total').innerText = totalQty;
         
         if (!listHTML) {
             listHTML = `<div class="empty-state">Belum ada pesanan pada tanggal ini.</div>`;
@@ -642,8 +716,11 @@ const UI = {
 
         State.cart.forEach((item, index) => {
             totalPcs += item.quantity;
+            const imgURL = Utils.getProductImage(item.namaProduk, item.warna); 
+            
             cartList.innerHTML += `
                 <div class="cart-item">
+                    <img src="${imgURL}" alt="${item.warna}" style="width:40px; height:40px; border-radius:6px; object-fit:cover; border:1px solid #e5e7eb;">
                     <div class="cart-item-detail">
                         <div class="cart-item-title">${item.namaProduk}</div>
                         <div class="cart-item-variant">${item.warna} - Ukuran ${item.ukuran} (Qty: ${item.quantity})</div>
@@ -726,7 +803,6 @@ const UI = {
     }
 };
 
-// 6. INITIALIZATION & PWA
 window.addEventListener('DOMContentLoaded', () => {
     UI.init();
     API.getData();
