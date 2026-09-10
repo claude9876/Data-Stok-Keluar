@@ -2,1130 +2,363 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistem Manajemen Pesanan Fashion</title>
-
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2563eb">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Pesanan Harian</title>
+    <!-- Tambahkan link manifest -->
+    <link rel="manifest" href="./manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --success: #059669; 
-            --warning: #d97706; 
-            --danger: #ef4444;
-            --bg-body: #f8fafc; 
-            --bg-surface: #ffffff;
-            --text-main: #0f172a; 
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --radius: 16px; 
-            --radius-sm: 10px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shopee-orange: #ee4d2d;
+            --shopee-orange-hover: #d73a1c;
+            --bg-sidebar: #ffffff;
+            --bg-main: #f6f6f6;
+            --text-main: #333333;
         }
 
-        * { box-sizing: border-box; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
-        [hidden] { display: none !important; }
+        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+        .sidebar { width: 250px; background-color: var(--bg-sidebar); min-height: 100vh; border-right: 1px solid #e5e5e5; position: fixed; top: 0; left: 0; overflow-y: auto; }
+        .sidebar-item { padding: 12px 24px; color: #555; display: flex; align-items: center; cursor: pointer; transition: all 0.2s; }
+        .sidebar-item:hover, .sidebar-item.active { background-color: #fef0ef; color: var(--shopee-orange); font-weight: 500; }
+        .sidebar-item i { width: 24px; font-size: 1.1em; }
+        .top-header { margin-left: 250px; background-color: white; height: 60px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: fixed; top: 0; right: 0; left: 0; z-index: 10; }
+        .main-content { margin-left: 250px; margin-top: 60px; padding: 24px; }
+        .content-card { background-color: white; border-radius: 4px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); border: 1px solid #e5e5e5; margin-bottom: 24px; }
+        .tabs { display: flex; border-bottom: 1px solid #e5e5e5; background: white; }
+        .tab { padding: 16px 24px; cursor: pointer; color: #555; font-weight: 500; border-bottom: 2px solid transparent; }
+        .tab:hover, .tab.active { color: var(--shopee-orange); border-bottom: 2px solid var(--shopee-orange); }
+        .btn-shopee { background-color: var(--shopee-orange); color: white; padding: 8px 16px; border-radius: 2px; font-weight: 500; border: none; cursor: pointer; transition: 0.2s;}
+        .btn-shopee:hover { background-color: var(--shopee-orange-hover); }
+        .btn-outline { background-color: white; color: #555; border: 1px solid #ccc; padding: 8px 16px; border-radius: 2px; font-weight: 500; cursor: pointer; }
+        .btn-outline:hover { background-color: #f9f9f9; }
+        .input-field { width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 2px; outline: none; }
+        .input-field:focus { border-color: var(--shopee-orange); }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background-color: #f6f6f6; color: #999; font-weight: normal; padding: 12px 16px; border-bottom: 1px solid #e5e5e5; }
+        td { padding: 16px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
+        .modal-content { background: white; border-radius: 4px; width: 600px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; }
+        .modal-header { padding: 16px 24px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; overflow-y: auto; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid #e5e5e5; text-align: right; background: #fafafa; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; color: #333; font-size: 14px; }
         
-        body { 
-            background-color: var(--bg-body); color: var(--text-main); margin: 0; 
-            padding: 0 0 110px 0; line-height: 1.5; -webkit-font-smoothing: antialiased; 
+        /* Floating Sync Status */
+        #syncStatus {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 100;
         }
-        
-        .container { 
-            max-width: 800px; margin: 32px auto; background: var(--bg-surface); 
-            padding: 32px; border-radius: var(--radius); box-shadow: var(--shadow); 
-            width: 92%; transition: all 0.3s ease; border: 1px solid var(--border);
+
+        /* Responsive Sidebar */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .top-header { margin-left: 0; }
+            .main-content { margin-left: 0; padding: 12px; }
+            .tabs { flex-wrap: wrap; }
+            .tab { padding: 12px 16px; font-size: 13px; }
         }
-        
-        @media (max-width: 600px) {
-            .container { padding: 20px; margin: 20px auto; }
-        }
-
-        h1, h2 { text-align: center; margin-top: 0; color: var(--text-main); font-weight: 700; letter-spacing: -0.02em; }
-        h1 { font-size: 1.75rem; margin-bottom: 24px; }
-        h2 { font-size: 1.5rem; }
-
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        
-        .filter-section { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
-        .filter-section input { padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-weight: 600; font-size: 15px; color: var(--text-main); box-shadow: var(--shadow-sm); }
-        
-        .sync-status { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;}
-        .sync-status.offline { color: var(--danger); }
-
-        .dashboard-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .card-stat { border-radius: var(--radius); padding: 16px 12px; text-align: center; color: white; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(255,255,255,0.1); }
-        .card-stat:active { transform: scale(0.98); }
-        .card-stat:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-        .card-stat h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; opacity: 0.9; }
-        .card-stat .angka { font-size: 36px; font-weight: 800; margin-top: 8px; line-height: 1; }
-        
-        .bg-masuk { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .bg-terkirim { background: linear-gradient(135deg, #10b981, #059669); }
-        .bg-batal { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-        .bg-total { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); grid-column: span 3; cursor: pointer; padding: 24px 20px;}
-        .bg-total .angka { font-size: 48px; }
-
-        .detail-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-        .detail-header h2 { margin: 0; flex: 1; text-align: left; }
-        
-        .tabs { display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; background: #f1f5f9; padding: 6px; border-radius: 12px; }
-        .tab-btn { 
-            flex: 1; min-width: 80px; padding: 12px 10px; border-radius: 8px; border: none; 
-            background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 13px; white-space: nowrap;
-        }
-        .tab-btn:hover { color: var(--text-main); }
-        .tab-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow-sm); }
-
-        .search-box { margin-bottom: 24px; }
-        .search-box input { padding-left: 40px; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%2364748b" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>'); background-repeat: no-repeat; background-position: 14px center; }
-        
-        .order-list { display: flex; flex-direction: column; gap: 20px; }
-        .order-card { 
-            border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; 
-            background: #fff; box-shadow: var(--shadow-sm);
-            display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
-        }
-        .order-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
-
-        .order-card.unconfirmed { background-color: rgba(245, 158, 11, 0.08); border-color: #fbd38d; }
-        .order-card.cancelled { background-color: rgba(239, 68, 68, 0.05); border-color: #fecaca; }
-        .order-card.cancelled .grouped-item-info .product-name, 
-        .order-card.cancelled .variant { text-decoration: line-through; opacity: 0.7;}
-
-        .btn-confirm {
-            background: #f59e0b; color: white; border: none; padding: 6px 12px;
-            border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
-            transition: 0.2s; display: inline-flex; align-items: center; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
-        }
-        .btn-confirm:hover { background: #d97706; transform: translateY(-1px); }
-        
-        .order-card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 4px; gap: 16px; flex-wrap: wrap;}
-        .buyer-info { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 200px;}
-        .resi-title { font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
-        .buyer-name { font-size: 14px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-weight: 500; }
-        
-        .badge { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; white-space: nowrap; }
-        .badge-platform { background: #f1f5f9; color: #475569; }
-        .badge-warning { background: #fef3c7; color: #b45309; }
-        .badge-success { background: #d1fae5; color: #047857; }
-        .badge-danger { background: #fee2e2; color: #b91c1c; } 
-        
-        .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;}
-        .btn-download { background: #f8fafc; border: 1px solid var(--border); cursor: pointer; font-size: 18px; padding: 6px 10px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
-        .btn-download:hover { background: #eff6ff; border-color: #bfdbfe; color: var(--primary); }
-
-        .order-card-body { padding-top: 0; }
-        
-        .grouped-item { padding: 16px 0; border-bottom: 1px dashed var(--border); display: flex; gap: 16px; align-items: center; }
-        .grouped-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .grouped-item-img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; background: #f8fafc; box-shadow: var(--shadow-sm); }
-        .grouped-item-info { flex: 1; }
-        .grouped-item-info .product-name { font-weight: 600; font-size: 15px; color: var(--text-main); margin-bottom: 4px; }
-        .grouped-item-info .variant { color: var(--text-muted); font-size: 13px; font-weight: 500; }
-        .qty-inline { font-weight: 700; color: var(--text-main); background: #f1f5f9; padding: 6px 12px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); }
-        
-        .order-card-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 4px; font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px;}
-        .qty-box { background: #eff6ff; color: var(--primary-hover); padding: 8px 16px; border-radius: 8px; font-weight: 700; border: 1px solid #bfdbfe; font-size: 14px;}
-        
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); background: #f8fafc; border-radius: var(--radius); border: 1px dashed #cbd5e1; font-weight: 500; }
-
-        .rekap-card { display: flex; gap: 16px; align-items: center; background: #fff; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; box-shadow: var(--shadow-sm); transition: transform 0.2s;}
-        .rekap-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-        .rekap-img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); background: #f8fafc; flex-shrink: 0;}
-        .rekap-info { flex: 1; }
-        .rekap-title { font-weight: 700; color: var(--text-main); font-size: 16px; margin-bottom: 4px;}
-        .rekap-variant { color: var(--text-muted); font-size: 14px; font-weight: 500; }
-        .rekap-qty { font-weight: 800; color: var(--primary); background: #eff6ff; padding: 10px 16px; border-radius: 10px; font-size: 16px; border: 1px solid #bfdbfe; text-align: center; min-width: 80px;}
-
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--text-main); }
-        input, select { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; transition: all 0.2s ease; background-color: #f8fafc; color: var(--text-main); }
-        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); background-color: #ffffff; }
-        
-        .btn { width: 100%; padding: 16px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s ease; letter-spacing: 0.3px; }
-        .btn-primary { background: var(--success); color: white; margin-top: 12px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
-        .btn-primary:hover { background: #047857; transform: translateY(-1px); }
-        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
-        
-        .btn-secondary { background: #f1f5f9; color: var(--text-main); width: auto; padding: 10px 18px; border: 1px solid var(--border); font-size: 14px; }
-        .btn-secondary:hover { background: #e2e8f0; }
-        
-        .btn-add { background: var(--primary); color: white; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
-        .btn-add:hover { background: var(--primary-hover); transform: translateY(-1px); }
-
-        .section-divider { border: 0; border-top: 2px dashed var(--border); margin: 32px 0; }
-        .section-title { font-size: 14px; font-weight: 700; color: var(--text-muted); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .cart-item { display: flex; gap: 16px; align-items: center; background: #fff; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 12px; box-shadow: var(--shadow-sm); transition: transform 0.2s;}
-        .cart-item:hover { transform: translateX(4px); }
-        .cart-item-detail { display: flex; flex-direction: column; flex: 1; gap: 4px; }
-        .cart-item-title { font-weight: 700; color: var(--text-main); font-size: 15px;}
-        .cart-item-variant { font-size: 13px; color: var(--text-muted); font-weight: 500; }
-        .btn-remove { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
-        .btn-remove:hover { background: #fee2e2; border-color: #fca5a5; }
-
-        #toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
-        .toast { padding: 16px 24px; border-radius: 12px; color: white; font-weight: 600; box-shadow: var(--shadow-lg); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); font-size: 14px; }
-        .toast.success { background-color: var(--success); }
-        .toast.error { background-color: var(--danger); }
-        @keyframes slideIn { from { transform: translateX(100%) scale(0.95); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
-
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: var(--bg-surface); box-shadow: 0 -8px 24px rgba(0,0,0,0.08); display: flex; z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + 8px); border-top: 1px solid var(--border); }
-        .nav-item { flex: 1; padding: 12px 0 14px 0; background: transparent; border: none; border-top: 3px solid transparent; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; outline: none; }
-        .nav-item span { font-size: 24px; transition: transform 0.2s; }
-        .nav-item:hover { color: var(--primary); }
-        .nav-item:hover span { transform: translateY(-2px); }
-        .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); background: linear-gradient(180deg, #eff6ff 0%, transparent 100%); }
     </style>
 </head>
 <body>
 
-<audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
-<div id="toast-container" aria-live="polite"></div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="p-6">
+            <h2 class="text-xl font-bold text-[var(--shopee-orange)] flex items-center">
+                <i class="fas fa-shopping-bag mr-2"></i> Seller Center
+            </h2>
+            <p class="text-xs text-gray-500 mt-1">Konveksi Amat Abidin</p>
+        </div>
+        <div class="text-xs font-bold text-gray-400 uppercase px-6 py-2 mt-2">Pesanan</div>
+        <div class="sidebar-item active"><i class="far fa-list-alt"></i> Pesanan Saya</div>
+    </div>
 
-<main>
-    <section id="page-dashboard" aria-label="Dashboard Utama">
-        <div class="container">
-            <div id="view-summary">
-                <h1>Dashboard Harian</h1>
-                <div class="filter-section">
-                    <input type="date" id="filterTanggal" aria-label="Filter tanggal">
-                </div>
-                <div class="sync-status" id="sync-status">
-                    <span id="sync-icon">🔄</span> <span id="sync-text">Memuat data sistem...</span>
-                </div>
+    <!-- Top Header -->
+    <div class="top-header">
+        <div class="text-lg font-medium flex items-center gap-4">
+            Pesanan Saya
+            <button id="btnConfig" class="text-xs bg-gray-100 text-green-600 px-3 py-1 rounded border border-gray-300 pointer-events-none">
+                <i class="fas fa-check"></i> Terhubung Spreadsheet
+            </button>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm">Halo, Admin</span>
+            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white"><i class="fas fa-user"></i></div>
+        </div>
+    </div>
 
-                <div class="dashboard-cards">
-                    <div class="card-stat bg-masuk">
-                        <h3>Perlu Dikirim</h3>
-                        <div class="angka" id="stat-masuk">0</div>
-                    </div>
-                    <div class="card-stat bg-terkirim">
-                        <h3>Dikirim</h3>
-                        <div class="angka" id="stat-terkirim">0</div>
-                    </div>
-                    <div class="card-stat bg-batal">
-                        <h3>Batal</h3>
-                        <div class="angka" id="stat-batal">0</div>
-                    </div>
-                    <div class="card-stat bg-total" id="btn-show-details" role="button" tabindex="0">
-                        <h3>Total Produk Terjual</h3>
-                        <div class="angka" id="stat-total">0</div>
-                        <p style="margin: 8px 0 0; font-size: 12px; opacity: 0.8;">Klik untuk melihat rincian pesanan</p>
-                    </div>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="content-card">
+            <div class="tabs">
+                <div class="tab active" onclick="filterStatus('Semua', this)">Semua</div>
+                <div class="tab" onclick="filterStatus('Belum Dibayar', this)">Belum Dibayar</div>
+                <div class="tab" onclick="filterStatus('Perlu Dikirim', this)">Perlu Dikirim</div>
+                <div class="tab" onclick="filterStatus('Dikirim', this)">Dikirim</div>
+                <div class="tab" onclick="filterStatus('Selesai', this)">Selesai</div>
+            </div>
+            
+            <div class="p-4 flex justify-between items-center bg-gray-50 border-b border-gray-200">
+                <div class="w-1/2 relative">
+                    <input type="text" id="searchInput" placeholder="Cari No. Pesanan, Produk, atau Resi" class="input-field pl-3 pr-10">
+                    <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn-outline" onclick="document.getElementById('fileUpload').click()"><i class="fas fa-file-excel text-green-600"></i> Import Excel</button>
+                    <input type="file" id="fileUpload" accept=".xlsx, .xls" class="hidden" onchange="handleFile(event)">
+                    <button class="btn-shopee" onclick="openModal()"><i class="fas fa-plus"></i> Input Manual</button>
                 </div>
             </div>
 
-            <div id="view-details" hidden>
-                <div class="detail-header">
-                    <button type="button" class="btn btn-secondary" id="btn-back">← Kembali</button>
-                    <h2>Rincian Pesanan</h2>
-                </div>
-                
-                <div class="tabs" id="statusTabs">
-                    <button class="tab-btn active" data-target="all">Semua</button>
-                    <button class="tab-btn" data-target="masuk">Perlu Dikirim</button>
-                    <button class="tab-btn" data-target="terkirim">Dikirim</button>
-                    <button class="tab-btn" data-target="batal">Batal</button>
-                </div>
-
-                <div class="search-box">
-                    <input type="search" id="searchInput" placeholder="Cari Resi, Pembeli, atau Produk..." autocomplete="off">
-                </div>
-                
-                <div id="order-list-container" class="order-list"></div>
+            <div class="overflow-x-auto p-4">
+                <table id="orderTable">
+                    <thead>
+                        <tr>
+                            <th width="35%">Produk</th>
+                            <th width="15%">Qty</th>
+                            <th width="20%">Status</th>
+                            <th width="30%">Jasa Kirim / Resi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr id="emptyStateRow"><td colspan="4" class="text-center py-12 text-gray-500">Belum ada pesanan.</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </section>
+    </div>
 
-    <section id="page-rekap" aria-label="Rekap Penjualan Produk" hidden>
-        <div class="container">
-            <h1>Rekap Produk Terjual</h1>
-            <p style="text-align: center; color: var(--text-muted); font-size: 14px; margin-top: -16px; margin-bottom: 24px;">Rincian total kuantitas per warna dan ukuran</p>
-            
-            <div class="filter-section">
-                <input type="date" id="filterTanggalRekap" aria-label="Filter tanggal">
+    <!-- Modal Input Manual -->
+    <div id="inputModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-lg font-bold">Input Pesanan Manual</h3>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
             </div>
-            
-            <div id="rekap-list-container"></div>
-        </div>
-    </section>
-
-    <section id="page-input" aria-label="Input Pesanan Baru" hidden>
-        <div class="container">
-            <h1>Input Pesanan</h1>
-            
-            <form id="orderForm">
-                <div class="section-title">1. Data Pesanan Umum</div>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="input_tanggal">Tanggal</label>
-                        <input type="date" id="input_tanggal" required>
+            <div class="modal-body">
+                <form id="manualOrderForm">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group col-span-2">
+                            <label>No. Pesanan / Resi (Bisa di-scan barcode)</label>
+                            <input type="text" id="m_no_pesanan" class="input-field" placeholder="Arahkan scanner/ketik disini">
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label>Nama Produk <span class="text-red-500">*</span></label>
+                            <input type="text" id="m_nama_produk" class="input-field" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Variasi</label>
+                            <input type="text" id="m_variasi" class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <label>Qty <span class="text-red-500">*</span></label>
+                            <input type="number" id="m_qty" class="input-field" required value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="m_status" class="input-field">
+                                <option value="Perlu Dikirim">Perlu Dikirim</option>
+                                <option value="Dikirim">Dikirim</option>
+                                <option value="Selesai">Selesai</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Ekspedisi</label>
+                            <select id="m_ekspedisi" class="input-field">
+                                <option value="Shopee Express">Shopee Express</option>
+                                <option value="J&T Express">J&T Express</option>
+                                <option value="Ambil Sendiri">Ambil Sendiri</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label>Nama Pembeli</label>
+                            <input type="text" id="m_penerima" class="input-field">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="id_pesanan">No. Resi</label>
-                        <input type="text" id="id_pesanan" placeholder="Ketik No. Resi..." required>
-                    </div>
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="platform">Platform Penjualan</label>
-                        <select id="platform" required>
-                            <option value="Shopee">Shopee</option>
-                            <option value="TikTok Shop">TikTok Shop</option>
-                            <option value="WhatsApp">WhatsApp</option>
-                            <option value="Offline">Offline / Toko</option>
-                            <option value="Lainnya">Lainnya</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="nama_pembeli">Nama Pembeli <small style="color:var(--text-muted); font-weight:normal;">(Opsional)</small></label>
-                        <input type="text" id="nama_pembeli" placeholder="Nama / Username">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="status">Status Pemrosesan</label>
-                    <select id="status" required>
-                        <option value="Masuk">Perlu Dikirim (Masuk)</option>
-                        <option value="Terkirim">Dikirim (Selesai)</option>
-                        <option value="Batal">Dibatalkan (Batal)</option>
-                    </select>
-                </div>
-
-                <hr class="section-divider">
-
-                <div class="section-title">2. Detail Barang / Varian</div>
-                <div class="form-group">
-                    <label for="nama_produk">Nama Produk</label>
-                    <input type="text" id="nama_produk" list="daftar-produk" placeholder="Contoh: Kemeja polkadot" required>
-                    <datalist id="daftar-produk">
-                        <option value="Kemeja polkadot">
-                        <option value="Jeans Cutbray">
-                    </datalist>
-                </div>
-                
-                <div class="form-group">
-                    <label for="warna">Varian Warna</label>
-                    <input type="text" id="warna" list="daftar-warna" placeholder="Contoh: Hitam, Maroon" required>
-                    <datalist id="daftar-warna">
-                        <option value="Hitam"><option value="Putih"><option value="Maroon"><option value="Maron">
-                        <option value="Cokelat"><option value="Kuning"><option value="Butter"><option value="Blue Soft (ungu)">
-                        <option value="Dark Blue"><option value="Hitam dan Putih"><option value="Putih dan Cokelat">
-                    </datalist>
-                </div>
-
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label for="ukuran">Ukuran</label>
-                        <select id="ukuran" required>
-                            <option value="" disabled selected>Pilih Ukuran</option>
-                            <option value="All Size">All Size</option>
-                            <option value="S">S</option><option value="M">M</option>
-                            <option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
-                            <option value="27">27</option><option value="28">28</option><option value="29">29</option>
-                            <option value="30">30</option><option value="31">31</option><option value="32">32</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantity">Kuantitas (Qty)</label>
-                        <input type="number" id="quantity" min="1" value="1" required>
-                    </div>
-                </div>
-
-                <button type="submit" id="btnAddToCart" class="btn btn-add">➕ Tambah ke Daftar Variasi</button>
-            </form>
-            
-            <div id="cart-area" hidden>
-                <div class="section-title" style="color: var(--primary);">Daftar Barang (Akan Disimpan)</div>
-                <div id="cart-list" style="margin-bottom: 20px;"></div>
-                
-                <button type="button" id="btnSubmitFinal" class="btn btn-primary">
-                    💾 Simpan ke Server (<span id="cart-total-qty">0</span> pcs)
-                </button>
+                </form>
             </div>
-            
+            <div class="modal-footer">
+                <button type="button" class="btn-outline mr-2" onclick="closeModal()">Batal</button>
+                <button type="button" class="btn-shopee" onclick="saveManualOrder()">Simpan & Sync</button>
+            </div>
         </div>
-    </section>
-</main>
+    </div>
 
-<nav class="bottom-nav" aria-label="Navigasi Bawah">
-    <button type="button" class="nav-item active" id="nav-dashboard">
-        <span>📊</span> Dashboard
-    </button>
-    <button type="button" class="nav-item" id="nav-rekap">
-        <span>📦</span> Rekap Produk
-    </button>
-    <button type="button" class="nav-item" id="nav-input">
-        <span>📝</span> Input Data
-    </button>
-</nav>
+    <!-- Sync Indicator -->
+    <div id="syncStatus">
+        <i class="fas fa-sync fa-spin"></i> Menyinkronkan ke Spreadsheet...
+    </div>
 
-<script>
-/**
- * STRUKTUR APLIKASI MODULAR - UPDATE V5 (SISTEM ANTI-BADAI / AUTO DETECT FORMAT)
- */
-
-const Config = {
-    // ⚠️ PENTING: Ganti URL di bawah ini dengan Web App URL Apps Script Anda
-    API_URL: 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec',
-    SYNC_INTERVAL: 5000, 
-    FETCH_TIMEOUT: 15000,
-    CACHE_KEY: 'fashion_orders_cache'
-};
-
-const State = {
-    allData: [],
-    isSyncing: false,
-    selectedDate: '',
-    currentTabStatus: 'all',
-    cart: [] 
-};
-
-const Utils = {
-    escapeHTML: (str) => {
-        const div = document.createElement('div');
-        div.textContent = (str === null || str === undefined) ? '' : String(str);
-        return div.innerHTML;
-    },
-    getToday: () => {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    },
-    
-    getProductImage: (produk, warna) => {
-        let w = (warna || '').toLowerCase();
-        
-        const fotoReal = {
-            "hitam": "https://down-id.img.susercontent.com/file/id-11134207-81zte-msjtzri73oxt92@resize_w1080_nl.webp",
-            "putih": "https://down-id.img.susercontent.com/file/id-11134207-81ztp-msjtzri4err6bf@resize_w1080_nl.webp",
-            "maroon": "https://down-id.img.susercontent.com/file/id-11134207-81ztg-msjtzri4g6bmd4@resize_w1080_nl.webp",
-            "maron": "https://down-id.img.susercontent.com/file/id-11134207-81ztg-msjtzri4g6bmd4@resize_w1080_nl.webp",
-            "cokelat": "https://down-id.img.susercontent.com/file/id-11134207-81ztk-msjtzri4hkw255@resize_w1080_nl.webp",
-            "kuning": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
-            "butter": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
-            "blue soft": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp",
-            "ungu": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp" 
-        };
-
-        for (const [keyColor, urlFoto] of Object.entries(fotoReal)) {
-            if (w.includes(keyColor)) return urlFoto;
-        }
-
-        let bgHex = "e2e8f0"; let txtHex = "334155";
-        if (w.includes('navy') || w.includes('biru')) { bgHex = "1e3a8a"; txtHex = "ffffff"; }
-        else if (w.includes('cream') || w.includes('krem') || w.includes('butter') || w.includes('kuning')) { bgHex = "fef3c7"; txtHex = "92400e"; }
-        else if (w.includes('hijau') || w.includes('green')) { bgHex = "166534"; txtHex = "ffffff"; }
-        else if (w.includes('pink') || w.includes('merah muda')) { bgHex = "fbcfe8"; txtHex = "831843"; }
-
-        const initial = w ? w.charAt(0).toUpperCase() : 'B'; 
-        return `https://ui-avatars.com/api/?name=${initial}&background=${bgHex}&color=${txtHex}&size=100&bold=true&font-size=0.6`;
-    },
-
-    // Sistem Deteksi Kolom Pintar (Kebal perubahan judul header Sheets)
-    getVal(row, index, possibleKeys) {
-        // 1. Cek dari nama kunci yang kita kenali (case-sensitive)
-        for (let k of possibleKeys) {
-            if (row[k] !== undefined && row[k] !== null) return row[k];
-        }
-        // 2. Cek secara huruf kecil/besar (case-insensitive)
-        for (let k in row) {
-            if (possibleKeys.map(pk => pk.toLowerCase()).includes(k.toLowerCase())) return row[k];
-        }
-        // 3. Fallback Index: jika baris header utama tak sengaja tertimpa
-        const vals = Object.values(row);
-        if (vals.length > index) return vals[index];
-        return '';
-    },
-
-    // Sistem Deteksi Tanggal Pintar (Kebal perubahan format DD/MM atau MM/DD dari Excel/Sheets)
-    normalizeDate(rawDate) {
-        if (!rawDate) return '';
-        let s = String(rawDate).replace(/^'/, '').trim();
-        if (!s) return '';
-        
-        // Pola 1: YYYY-MM-DD (Standar sistem kita)
-        let matchYMD = s.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-        if (matchYMD) return `${matchYMD[1]}-${matchYMD[2].padStart(2,'0')}-${matchYMD[3].padStart(2,'0')}`;
-        
-        // Pola 2: MM/DD/YYYY atau DD/MM/YYYY dari Google Sheets
-        let matchDMY = s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
-        if (matchDMY) {
-            let d = new Date(s.split(' ')[0]); // Coba sistem native baca dulu
-            if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            return `${matchDMY[3]}-${matchDMY[2].padStart(2,'0')}-${matchDMY[1].padStart(2,'0')}`; // Paksa konversi
-        }
-        
-        // Pola 3: Native JS Date/ISO string format panjang
-        let d2 = new Date(s);
-        if (!isNaN(d2)) return `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
-        
-        // Fallback terakhir, pecah dari spasi atau T
-        if (s.includes('T')) return s.split('T')[0];
-        if (s.includes(' ')) return s.split(' ')[0];
-        return s;
-    }
-};
-
-const API = {
-    async fetchWithTimeout(url, options = {}) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), Config.FETCH_TIMEOUT);
-        try {
-            const response = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(id);
-            return response;
-        } catch (error) {
-            clearTimeout(id);
-            throw error;
-        }
-    },
-    
-    async getData() {
-        const cachedData = localStorage.getItem(Config.CACHE_KEY);
-        if (cachedData) {
-            State.allData = JSON.parse(cachedData);
-            UI.renderDashboard();
-            UI.renderRekap();
-        }
-
-        if (State.isSyncing) return;
-        State.isSyncing = true;
-        UI.updateSyncStatus('syncing');
-
-        try {
-            const res = await this.fetchWithTimeout(Config.API_URL, { cache: 'no-store' });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const text = await res.text();
-            
-            const oldLength = State.allData.length;
-            
-            try {
-                let json = JSON.parse(text);
-                State.allData = Array.isArray(json) ? json : (json.data || []);
-            } catch (e) {
-                State.allData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
-            }
-            
-            if (oldLength > 0 && State.allData.length > oldLength) {
-                const jumlahBaru = State.allData.length - oldLength;
-                UI.playNotif(jumlahBaru);
-            }
-            
-            localStorage.setItem(Config.CACHE_KEY, JSON.stringify(State.allData));
-            UI.updateSyncStatus('success');
-            UI.renderDashboard();
-            UI.renderRekap();
-        } catch (error) {
-            UI.updateSyncStatus('error', error.message);
-        } finally {
-            State.isSyncing = false;
-        }
-    },
-
-    async postData(payload) {
-        return await this.fetchWithTimeout(Config.API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-    }
-};
-
-const UI = {
-    init() {
-        State.selectedDate = Utils.getToday();
-        document.getElementById('filterTanggal').value = State.selectedDate;
-        document.getElementById('filterTanggalRekap').value = State.selectedDate;
-        document.getElementById('input_tanggal').value = State.selectedDate;
-        
-        this.bindEvents();
-    },
-
-    bindEvents() {
-        document.getElementById('nav-dashboard').addEventListener('click', () => this.switchPage('dashboard'));
-        document.getElementById('nav-rekap').addEventListener('click', () => this.switchPage('rekap'));
-        document.getElementById('nav-input').addEventListener('click', () => this.switchPage('input'));
-        
-        document.getElementById('filterTanggal').addEventListener('change', (e) => {
-            State.selectedDate = e.target.value;
-            document.getElementById('filterTanggalRekap').value = State.selectedDate; 
-            this.renderDashboard();
-            this.renderRekap();
-        });
-        
-        document.getElementById('filterTanggalRekap').addEventListener('change', (e) => {
-            State.selectedDate = e.target.value;
-            document.getElementById('filterTanggal').value = State.selectedDate; 
-            this.renderDashboard();
-            this.renderRekap();
-        });
-
-        document.getElementById('btn-show-details').addEventListener('click', () => this.toggleDetails(true));
-        document.getElementById('btn-back').addEventListener('click', () => this.toggleDetails(false));
-        document.getElementById('searchInput').addEventListener('input', (e) => this.filterCards(e.target.value));
-        
-        const tabs = document.querySelectorAll('.tab-btn');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                tabs.forEach(t => t.classList.remove('active'));
-                e.target.classList.add('active');
-                State.currentTabStatus = e.target.getAttribute('data-target');
-                this.filterCards(document.getElementById('searchInput').value);
+    <script>
+        // --- SERVICE WORKER REGISTRATION ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker terdaftar!', reg))
+                .catch(err => console.log('Service Worker gagal:', err));
             });
-        });
-
-        document.getElementById('orderForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addToCart();
-        });
-        document.getElementById('btnSubmitFinal').addEventListener('click', () => this.submitFinalOrder());
-    },
-
-    switchPage(page) {
-        document.getElementById('page-dashboard').hidden = page !== 'dashboard';
-        document.getElementById('page-rekap').hidden = page !== 'rekap';
-        document.getElementById('page-input').hidden = page !== 'input';
-        
-        document.getElementById('nav-dashboard').classList.toggle('active', page === 'dashboard');
-        document.getElementById('nav-rekap').classList.toggle('active', page === 'rekap');
-        document.getElementById('nav-input').classList.toggle('active', page === 'input');
-
-        if (page === 'dashboard' || page === 'rekap') {
-            API.getData();
-        }
-    },
-
-    toggleDetails(show) {
-        document.getElementById('view-summary').hidden = show;
-        document.getElementById('view-details').hidden = !show;
-        if (!show) {
-            document.getElementById('searchInput').value = '';
-            document.querySelectorAll('.tab-btn')[0].click(); 
-        }
-    },
-
-    updateSyncStatus(status) {
-        const icon = document.getElementById('sync-icon');
-        const text = document.getElementById('sync-text');
-        const container = document.getElementById('sync-status');
-        
-        if (status === 'syncing') {
-            icon.textContent = '🔄'; text.textContent = 'Menyinkronkan...';
-            container.classList.remove('offline');
-        } else if (status === 'success') {
-            const time = new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-            icon.textContent = '🟢'; text.textContent = `Tersinkron (Pukul ${time})`;
-            container.classList.remove('offline');
-        } else {
-            icon.textContent = '🔴'; text.textContent = `Gagal sinkron. Menggunakan data lokal.`;
-            container.classList.add('offline');
-        }
-    },
-    
-    confirmOrder(orderId, btnElement) {
-        let confirmedOrders = JSON.parse(localStorage.getItem('confirmed_orders') || '[]');
-        if (!confirmedOrders.includes(orderId)) {
-            confirmedOrders.push(orderId);
-            localStorage.setItem('confirmed_orders', JSON.stringify(confirmedOrders));
         }
         
-        const card = btnElement.closest('.order-card');
-        if (card) {
-            card.classList.remove('unconfirmed');
-        }
-        btnElement.remove();
-        this.showToast('Pesanan berhasil dikonfirmasi', 'success');
-    },
-
-    renderDashboard() {
-        let totalQty = 0;
-        let countMasuk = 0;
-        let countTerkirim = 0;
-        let countBatal = 0;
-        let listHTML = '';
-
-        const groupedOrders = {};
-        const orderedIds = []; 
+        let allOrders = [];
+        let currentFilter = 'Semua';
         
-        let confirmedOrders = JSON.parse(localStorage.getItem('confirmed_orders'));
-        if (!confirmedOrders) {
-            confirmedOrders = [];
-            State.allData.forEach(row => {
-                const idRaw = Utils.getVal(row, 1, ['ID', 'No. Resi', 'Resi']);
-                const id = idRaw || JSON.stringify(row);
-                if (!confirmedOrders.includes(id)) confirmedOrders.push(id);
+        // --- HARDCODED GOOGLE SCRIPT URL ---
+        const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec';
+
+        function syncToGoogleSheets(dataArray) {
+            const syncUI = document.getElementById('syncStatus');
+            syncUI.style.display = 'flex';
+            syncUI.innerHTML = '<i class="fas fa-sync fa-spin"></i> Menyinkronkan ke Spreadsheet...';
+
+            fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify(dataArray),
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                syncUI.innerHTML = '<i class="fas fa-check text-green-400"></i> Berhasil disimpan di Spreadsheet!';
+                setTimeout(() => syncUI.style.display = 'none', 3000);
+            })
+            .catch(err => {
+                syncUI.innerHTML = '<i class="fas fa-times text-red-400"></i> Gagal terhubung. Cek koneksi / URL.';
+                setTimeout(() => syncUI.style.display = 'none', 4000);
             });
-            localStorage.setItem('confirmed_orders', JSON.stringify(confirmedOrders));
         }
 
-        State.allData.forEach(row => {
-            const rawDateVal = Utils.getVal(row, 0, ['Tanggal', 'Date', 'Waktu']);
-            const rowDate = Utils.normalizeDate(rawDateVal);
-            
-            if (rowDate === State.selectedDate) {
-                const qtyVal = Utils.getVal(row, 5, ['Quantity', 'Qty', 'Jumlah']);
-                const qty = parseInt(qtyVal) || 0;
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "-" });
                 
-                const idRawVal = Utils.getVal(row, 1, ['ID', 'No. Resi', 'Resi']);
-                const idRaw = (idRawVal === null || idRawVal === undefined) ? '' : String(idRawVal).trim();
-                const id = idRaw || JSON.stringify(row); 
+                const processed = rawData.map(row => ({
+                    id: row['No. Pesanan'] || 'N/A',
+                    productName: row['Nama Produk'] || '',
+                    variation: row['Nama Variasi'] !== '-' ? row['Nama Variasi'] : '',
+                    qty: row['Jumlah'] || 1,
+                    status: row['Status Pesanan'] || 'Unknown',
+                    courier: row['Opsi Pengiriman'] || '',
+                    resi: row['No. Resi'] !== '-' ? row['No. Resi'] : '',
+                    buyerName: row['Nama Penerima'] || row['Username (Pembeli)'] || '-',
+                    source: 'Import Excel'
+                }));
+
+                // Render ke tabel HTML
+                allOrders = [...processed, ...allOrders];
+                renderTable();
                 
-                const statusVal = Utils.getVal(row, 6, ['Status', 'Status Pesanan']);
-                const status = String(statusVal).toLowerCase();
-                
-                let isBatal = status.includes('batal') || status.includes('cancel');
-                let isTerkirim = status.includes('terkirim') || status.includes('kirim') || status.includes('selesai');
-                
-                let statusText = 'masuk';
-                if (isBatal) statusText = 'batal';
-                else if (isTerkirim) statusText = 'terkirim';
-                
-                if (!isBatal) {
-                    totalQty += qty; 
-                }
-                
-                if (!groupedOrders[id]) {
-                    groupedOrders[id] = {
-                        id: Utils.escapeHTML(idRaw || '-'),
-                        platform: Utils.escapeHTML(Utils.getVal(row, 7, ['Platform', 'Toko']) || '-'),
-                        pembeli: Utils.escapeHTML(Utils.getVal(row, 8, ['Nama Pembeli', 'Username', 'Pembeli']) || 'Tanpa Nama'),
-                        statusText: statusText,
-                        isTerkirim: isTerkirim,
-                        isBatal: isBatal,
-                        waktuInput: String(rawDateVal), 
-                        items: [],
-                        totalOrderQty: 0
-                    };
-                    orderedIds.push(id);
-                }
-
-                groupedOrders[id].items.push({
-                    produk: Utils.escapeHTML(Utils.getVal(row, 2, ['Nama Produk', 'Produk']) || '-'),
-                    warna: Utils.escapeHTML(Utils.getVal(row, 3, ['Warna', 'Varian']) || '-'),
-                    ukuran: Utils.escapeHTML(Utils.getVal(row, 4, ['Ukuran', 'Size']) || '-'),
-                    qty: qty
-                });
-                
-                groupedOrders[id].totalOrderQty += qty;
-            }
-        });
-
-        const sortedOrders = orderedIds.map(id => groupedOrders[id]);
-
-        sortedOrders.forEach(order => {
-            if (order.isBatal) countBatal++;
-            else if (order.isTerkirim) countTerkirim++;
-            else countMasuk++;
-
-            let badgeStatus = '';
-            if (order.isBatal) {
-                badgeStatus = `<span class="badge badge-danger">Dibatalkan</span>`;
-            } else if (order.isTerkirim) {
-                badgeStatus = `<span class="badge badge-success">Dikirim</span>`;
-            } else {
-                badgeStatus = `<span class="badge badge-warning">Perlu Dikirim</span>`;
-            }
-            
-            let formattedTime = "";
-            const hasTime = order.waktuInput.includes('T') || order.waktuInput.includes(':');
-            const d = new Date(order.waktuInput);
-            
-            if (!isNaN(d)) {
-                if (hasTime) {
-                    formattedTime = d.toLocaleString('id-ID', {
-                        day: '2-digit', month: 'short', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                } else {
-                    formattedTime = d.toLocaleString('id-ID', {
-                        day: '2-digit', month: 'short', year: 'numeric'
-                    }); 
-                }
-            } else {
-                formattedTime = order.waktuInput;
-            }
-            
-            const isConfirmed = confirmedOrders.includes(order.id);
-            const confirmBtnHTML = (isConfirmed || order.isBatal) ? '' : `<button type="button" class="btn-confirm" onclick="UI.confirmOrder('${order.id}', this)">✅ Konfirmasi</button>`;
-            
-            let cardClasses = 'order-card';
-            if (order.isBatal) cardClasses += ' cancelled';
-            else if (!isConfirmed) cardClasses += ' unconfirmed';
-
-            let itemsHTML = '';
-            order.items.forEach(item => {
-                const imgURL = Utils.getProductImage(item.produk, item.warna); 
-                
-                itemsHTML += `
-                <div class="grouped-item">
-                    <img src="${imgURL}" alt="${item.warna}" class="grouped-item-img" loading="lazy" crossorigin="anonymous">
-                    <div class="grouped-item-info">
-                        <div class="product-name">${item.produk}</div>
-                        <div class="variant">Warna: ${item.warna} &nbsp;|&nbsp; Ukuran: ${item.ukuran}</div>
-                    </div>
-                    <div class="qty-inline">x${item.qty}</div>
-                </div>`;
-            });
-
-            listHTML += `
-            <div class="${cardClasses}" data-status="${order.statusText}">
-                <div class="order-card-header">
-                    <div class="buyer-info">
-                        <div class="resi-title">
-                            <span class="badge badge-platform">${order.platform}</span>
-                            No. Resi: ${order.id}
-                        </div>
-                        <div class="buyer-name">
-                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                            ${order.pembeli}
-                        </div>
-                        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 500;">
-                            🕒 ${hasTime ? 'Diinput pada: ' : 'Tanggal: '} ${formattedTime}
-                        </div>
-                    </div>
-                    <div class="header-actions">
-                        ${confirmBtnHTML}
-                        ${badgeStatus}
-                        <button type="button" class="btn-download" onclick="UI.downloadCard('${order.id}', this)" title="Unduh Gambar Pesanan">📥</button>
-                    </div>
-                </div>
-                
-                <div class="order-card-body">
-                    ${itemsHTML}
-                </div>
-                
-                <div class="order-card-footer">
-                    <span class="qty-box">Total Qty: ${order.totalOrderQty} pcs</span>
-                </div>
-            </div>`;
-        });
-
-        document.getElementById('stat-masuk').innerText = countMasuk;
-        document.getElementById('stat-terkirim').innerText = countTerkirim;
-        document.getElementById('stat-batal').innerText = countBatal;
-        document.getElementById('stat-total').innerText = totalQty;
-        
-        if (!listHTML) {
-            listHTML = `<div class="empty-state">Belum ada pesanan pada tanggal ini.</div>`;
-        }
-        
-        document.getElementById('order-list-container').innerHTML = listHTML;
-        this.filterCards(document.getElementById('searchInput').value); 
-    },
-
-    renderRekap() {
-        const groupedRekap = {};
-        let totalSemuaQty = 0;
-
-        State.allData.forEach(row => {
-            const rawDateVal = Utils.getVal(row, 0, ['Tanggal', 'Date', 'Waktu']);
-            const rowDate = Utils.normalizeDate(rawDateVal);
-            
-            if (rowDate === State.selectedDate) {
-                const statusVal = Utils.getVal(row, 6, ['Status', 'Status Pesanan']);
-                const status = String(statusVal).toLowerCase();
-                
-                if (status.includes('batal') || status.includes('cancel')) return;
-
-                const produk = Utils.escapeHTML(Utils.getVal(row, 2, ['Nama Produk', 'Produk']) || '-');
-                const warna = Utils.escapeHTML(Utils.getVal(row, 3, ['Warna', 'Varian']) || '-');
-                const ukuran = Utils.escapeHTML(Utils.getVal(row, 4, ['Ukuran', 'Size']) || '-');
-                const qtyVal = Utils.getVal(row, 5, ['Quantity', 'Qty', 'Jumlah']);
-                const qty = parseInt(qtyVal) || 0;
-                
-                const key = `${produk}_${warna}_${ukuran}`;
-                
-                if (!groupedRekap[key]) {
-                    groupedRekap[key] = { produk, warna, ukuran, qty: 0 };
-                }
-                
-                groupedRekap[key].qty += qty;
-                totalSemuaQty += qty;
-            }
-        });
-
-        const sortedRekap = Object.values(groupedRekap).sort((a, b) => a.produk.localeCompare(b.produk));
-        
-        let rekapHTML = '';
-        sortedRekap.forEach(item => {
-            const imgURL = Utils.getProductImage(item.produk, item.warna); 
-            
-            rekapHTML += `
-            <div class="rekap-card">
-                <img src="${imgURL}" alt="${item.warna}" class="rekap-img" loading="lazy" crossorigin="anonymous">
-                <div class="rekap-info">
-                    <div class="rekap-title">${item.produk}</div>
-                    <div class="rekap-variant">Warna: ${item.warna} &nbsp;|&nbsp; Ukuran: ${item.ukuran}</div>
-                </div>
-                <div class="rekap-qty">${item.qty}</div>
-            </div>`;
-        });
-
-        if (!rekapHTML) {
-            rekapHTML = `<div class="empty-state">Belum ada barang yang terjual untuk direkap pada tanggal ini.</div>`;
-        } else {
-            rekapHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius); margin-bottom: 20px;">
-                    <span style="font-weight: 700; color: var(--primary-hover); font-size: 15px;">Total Keseluruhan Barang:</span>
-                    <span style="font-weight: 800; font-size: 20px; color: var(--primary);">${totalSemuaQty} pcs</span>
-                </div>
-                ${rekapHTML}
-            `;
-        }
-        
-        document.getElementById('rekap-list-container').innerHTML = rekapHTML;
-    },
-
-    filterCards(keyword) {
-        keyword = keyword.toLowerCase();
-        const cards = document.querySelectorAll('.order-card');
-        let visibleCount = 0;
-
-        cards.forEach(card => {
-            const textData = card.textContent.toLowerCase();
-            const cardStatus = card.getAttribute('data-status');
-            const matchTab = State.currentTabStatus === 'all' || cardStatus === State.currentTabStatus;
-            const matchSearch = textData.includes(keyword);
-
-            if (matchTab && matchSearch) {
-                card.style.display = 'flex';
-                visibleCount++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-
-        const container = document.getElementById('order-list-container');
-        let emptyState = document.getElementById('empty-search');
-        
-        if (visibleCount === 0 && cards.length > 0) {
-            if (!emptyState) {
-                container.insertAdjacentHTML('beforeend', `<div id="empty-search" class="empty-state">Data tidak ditemukan di tab ini.</div>`);
-            }
-        } else if (emptyState) {
-            emptyState.remove();
-        }
-    },
-
-    async downloadCard(orderId, btnElement) {
-        const card = btnElement.closest('.order-card');
-        if (!card) return;
-
-        const originalDisplay = btnElement.style.display;
-        btnElement.style.display = 'none';
-        
-        const confirmBtn = card.querySelector('.btn-confirm');
-        if (confirmBtn) confirmBtn.style.display = 'none';
-        
-        this.showToast('Memproses gambar...', 'success');
-
-        try {
-            if (typeof html2canvas === 'undefined') {
-                throw new Error("Library pembuat gambar gagal dimuat.");
-            }
-
-            const canvas = await html2canvas(card, {
-                scale: 2, 
-                backgroundColor: card.classList.contains('unconfirmed') ? '#fef3c7' : (card.classList.contains('cancelled') ? '#fee2e2' : '#ffffff'),
-                useCORS: true 
-            });
-
-            const link = document.createElement('a');
-            link.download = `Pesanan-${orderId}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-            
-        } catch (error) {
-            console.error('Error generating image:', error);
-            this.showToast('Gagal mengunduh gambar', 'error');
-        } finally {
-            btnElement.style.display = originalDisplay;
-            if (confirmBtn) confirmBtn.style.display = 'inline-flex';
-        }
-    },
-
-    showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%) scale(0.95)';
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    },
-
-    playNotif(jumlah) {
-        this.showToast(`🔔 Ada ${jumlah} barang pesanan baru masuk!`, 'success');
-        try {
-            const audio = document.getElementById('notifSound');
-            if(audio) {
-                audio.currentTime = 0; 
-                audio.play().catch(e => console.log('Autoplay diblokir browser', e));
-            }
-        } catch(e) {}
-    },
-
-    addToCart() {
-        const namaProduk = document.getElementById('nama_produk').value.trim();
-        const warna = document.getElementById('warna').value.trim();
-        const ukuran = document.getElementById('ukuran').value;
-        const quantity = parseInt(document.getElementById('quantity').value, 10);
-
-        if (!namaProduk || !warna || !ukuran) return;
-
-        State.cart.push({ namaProduk, warna, ukuran, quantity });
-        this.renderCartUI();
-
-        document.getElementById('warna').value = '';
-        document.getElementById('ukuran').selectedIndex = 0;
-        document.getElementById('quantity').value = '1';
-        document.getElementById('warna').focus(); 
-        
-        this.showToast('Barang dimasukkan ke daftar.', 'success');
-    },
-
-    renderCartUI() {
-        const cartArea = document.getElementById('cart-area');
-        const cartList = document.getElementById('cart-list');
-        const totalLabel = document.getElementById('cart-total-qty');
-        
-        if (State.cart.length === 0) {
-            cartArea.hidden = true;
-            return;
+                // Sinkronkan batch data ke Google Sheets
+                syncToGoogleSheets(processed);
+            };
+            reader.readAsArrayBuffer(file);
         }
 
-        cartArea.hidden = false;
-        cartList.innerHTML = '';
-        let totalPcs = 0;
+        function openModal() {
+            const rnd = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('m_no_pesanan').value = `MANUAL-260911-${rnd}`;
+            document.getElementById('inputModal').style.display = 'flex';
+        }
 
-        State.cart.forEach((item, index) => {
-            totalPcs += item.quantity;
-            const imgURL = Utils.getProductImage(item.namaProduk, item.warna); 
-            
-            cartList.innerHTML += `
-                <div class="cart-item">
-                    <img src="${imgURL}" alt="${item.warna}" style="width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
-                    <div class="cart-item-detail">
-                        <div class="cart-item-title">${item.namaProduk}</div>
-                        <div class="cart-item-variant">${item.warna} - Ukuran ${item.ukuran} (Qty: ${item.quantity})</div>
-                    </div>
-                    <button type="button" class="btn-remove" onclick="UI.removeFromCart(${index})">Hapus</button>
-                </div>
-            `;
-        });
-        
-        totalLabel.innerText = totalPcs;
-    },
+        function closeModal() { document.getElementById('inputModal').style.display = 'none'; document.getElementById('manualOrderForm').reset(); }
 
-    async submitFinalOrder() {
-        if(State.cart.length === 0) return;
-
-        const btn = document.getElementById('btnSubmitFinal');
-        const btnAdd = document.getElementById('btnAddToCart');
-        
-        const inputDate = document.getElementById('input_tanggal').value;
-        const now = new Date();
-        const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-        const datetimeVal = `'${inputDate}T${timeString}`; 
-
-        const commonData = {
-            tanggal: datetimeVal,
-            id: document.getElementById('id_pesanan').value.trim(),
-            status: document.getElementById('status').value,
-            platform: document.getElementById('platform').value,
-            namaPembeli: document.getElementById('nama_pembeli').value.trim()
-        };
-
-        btn.innerText = "⏳ Memproses Transaksi..."; 
-        btn.disabled = true;
-        btnAdd.disabled = true;
-        
-        let successCount = 0;
-
-        for (const item of State.cart) {
-            const payload = {
-                ...commonData,
-                namaProduk: item.namaProduk,
-                warna: item.warna,
-                ukuran: item.ukuran,
-                quantity: item.quantity
+        function saveManualOrder() {
+            const orderData = {
+                id: document.getElementById('m_no_pesanan').value,
+                productName: document.getElementById('m_nama_produk').value,
+                variation: document.getElementById('m_variasi').value,
+                qty: document.getElementById('m_qty').value,
+                status: document.getElementById('m_status').value,
+                courier: document.getElementById('m_ekspedisi').value,
+                resi: document.getElementById('m_no_pesanan').value, 
+                buyerName: document.getElementById('m_penerima').value,
+                source: 'Input Manual'
             };
 
-            try {
-                const res = await API.postData(payload);
-                if (res.ok) {
-                    const result = await res.json();
-                    if(result.status === 'success') successCount++;
-                }
-            } catch (error) {
-                console.error("Error pada pesanan:", item.namaProduk, error);
+            if(!orderData.productName) { alert("Nama Produk wajib diisi!"); return; }
+
+            allOrders.unshift(orderData);
+            closeModal();
+            renderTable();
+
+            // Sinkronkan data tunggal ini ke Google Sheets
+            syncToGoogleSheets([orderData]);
+        }
+
+        function getStatusColor(status) {
+            status = status.toLowerCase();
+            if (status.includes('batal')) return 'text-red-500 bg-red-50 border-red-200';
+            if (status.includes('selesai')) return 'text-green-600 bg-green-50 border-green-200';
+            if (status.includes('dikirim')) return 'text-blue-600 bg-blue-50 border-blue-200';
+            if (status.includes('perlu dikirim')) return 'text-[var(--shopee-orange)] bg-orange-50 border-orange-200';
+            return 'text-gray-600 bg-gray-50 border-gray-200';
+        }
+
+        function filterStatus(status, element) {
+            currentFilter = status;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+            renderTable();
+        }
+
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            let filteredOrders = allOrders.filter(order => {
+                if (currentFilter !== 'Semua' && !order.status.toLowerCase().includes(currentFilter.toLowerCase())) return false;
+                if (searchTerm && !`${order.id} ${order.productName} ${order.resi} ${order.buyerName}`.toLowerCase().includes(searchTerm)) return false;
+                return true;
+            });
+
+            if (filteredOrders.length === 0) {
+                 tbody.innerHTML = `<tr id="emptyStateRow"><td colspan="4" class="text-center py-12 text-gray-500">Tidak ada pesanan.</td></tr>`;
+                 return;
             }
+
+            filteredOrders.forEach(order => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div class="font-bold text-sm">${order.buyerName}</div>
+                        <div class="text-sm mt-2">${order.productName}</div>
+                        <div class="text-xs text-gray-500">Variasi: ${order.variation}</div>
+                    </td>
+                    <td><div class="text-lg font-medium">${order.qty}</div></td>
+                    <td><span class="px-2 py-1 border rounded text-xs font-medium ${getStatusColor(order.status)}">${order.status}</span></td>
+                    <td>
+                        <div class="text-sm">${order.courier}</div>
+                        <div class="text-xs mt-1 bg-gray-100 px-2 py-1 rounded inline-block">${order.resi}</div>
+                        <div class="text-[10px] text-gray-400 mt-1">Via: ${order.source}</div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
-
-        btn.disabled = false;
-        btnAdd.disabled = false;
-        btn.innerHTML = `💾 Simpan ke Server (<span id="cart-total-qty">0</span> pcs)`;
-
-        if (successCount === State.cart.length) {
-            this.showToast('✅ Semua pesanan berhasil disimpan!', 'success');
-            
-            State.cart = [];
-            this.renderCartUI();
-            
-            document.getElementById('nama_pembeli').value = '';
-            document.getElementById('id_pesanan').value = '';
-            document.getElementById('nama_produk').value = '';
-            
-            document.getElementById('id_pesanan').focus();
-            
-            API.getData(); 
-        } else {
-            this.showToast(`⚠️ Hanya ${successCount} dari ${State.cart.length} yang tersimpan. Cek jaringan.`, 'error');
+        
+        function renderTable() {
+            // Trigger search function with empty string to render all
+            document.getElementById('searchInput').dispatchEvent(new Event('input'));
         }
-    }
-};
-
-window.addEventListener('DOMContentLoaded', () => {
-    UI.init();
-    API.getData();
-    
-    setInterval(() => API.getData(), Config.SYNC_INTERVAL);
-    
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') API.getData();
-    });
-    
-    window.addEventListener('online', () => {
-        UI.showToast('Koneksi internet pulih. Menyinkronkan...', 'success');
-        API.getData();
-    });
-    window.addEventListener('offline', () => {
-        UI.updateSyncStatus('error');
-    });
-});
-
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Gagal:', err));
-    });
-}
-</script>
+    </script>
 </body>
 </html>
