@@ -100,7 +100,6 @@
         }
         .order-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
         
-        /* PEMBARUAN: ALIGNMENT & PADDING HEADER CARD */
         .order-card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 4px; gap: 16px; flex-wrap: wrap;}
         .buyer-info { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 200px;}
         .resi-title { font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;}
@@ -111,7 +110,6 @@
         .badge-warning { background: #fef3c7; color: #b45309; }
         .badge-success { background: #d1fae5; color: #047857; }
         
-        /* PEMBARUAN: JARAK STATUS & TOMBOL UNDUH */
         .header-actions { display: flex; align-items: center; gap: 16px; }
         .btn-download { background: #f8fafc; border: 1px solid var(--border); cursor: pointer; font-size: 18px; padding: 6px 10px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
         .btn-download:hover { background: #eff6ff; border-color: #bfdbfe; color: var(--primary); }
@@ -132,11 +130,19 @@
         .grouped-item-info .variant { color: var(--text-muted); font-size: 13px; font-weight: 500; }
         .qty-inline { font-weight: 700; color: var(--text-main); background: #f1f5f9; padding: 6px 12px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); }
         
-        /* PEMBARUAN: FOOTER CARD (Hanya Qty Total, Resi Pindah Ke Atas) */
         .order-card-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 4px; font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px;}
         .qty-box { background: #eff6ff; color: var(--primary-hover); padding: 8px 16px; border-radius: 8px; font-weight: 700; border: 1px solid #bfdbfe; font-size: 14px;}
         
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); background: #f8fafc; border-radius: var(--radius); border: 1px dashed #cbd5e1; font-weight: 500; }
+
+        /* --- STYLING KHUSUS MENU REKAP PRODUK --- */
+        .rekap-card { display: flex; gap: 16px; align-items: center; background: #fff; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; box-shadow: var(--shadow-sm); transition: transform 0.2s;}
+        .rekap-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+        .rekap-img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); background: #f8fafc; flex-shrink: 0;}
+        .rekap-info { flex: 1; }
+        .rekap-title { font-weight: 700; color: var(--text-main); font-size: 16px; margin-bottom: 4px;}
+        .rekap-variant { color: var(--text-muted); font-size: 14px; font-weight: 500; }
+        .rekap-qty { font-weight: 800; color: var(--primary); background: #eff6ff; padding: 10px 16px; border-radius: 10px; font-size: 16px; border: 1px solid #bfdbfe; text-align: center; min-width: 80px;}
 
         /* --- 5. FORMS, INPUTS & CART SYSTEM --- */
         .form-group { margin-bottom: 20px; }
@@ -194,6 +200,7 @@
 <div id="toast-container" aria-live="polite"></div>
 
 <main>
+    <!-- HALAMAN 1: DASHBOARD UTAMA -->
     <section id="page-dashboard" aria-label="Dashboard Utama">
         <div class="container">
             <div id="view-summary">
@@ -243,7 +250,21 @@
         </div>
     </section>
 
-    <!-- HALAMAN 2: INPUT FORM -->
+    <!-- HALAMAN 2: REKAP PRODUK (BARU) -->
+    <section id="page-rekap" aria-label="Rekap Penjualan Produk" hidden>
+        <div class="container">
+            <h1>Rekap Produk Terjual</h1>
+            <p style="text-align: center; color: var(--text-muted); font-size: 14px; margin-top: -16px; margin-bottom: 24px;">Rincian total kuantitas per warna dan ukuran</p>
+            
+            <div class="filter-section">
+                <input type="date" id="filterTanggalRekap" aria-label="Filter tanggal">
+            </div>
+            
+            <div id="rekap-list-container"></div>
+        </div>
+    </section>
+
+    <!-- HALAMAN 3: INPUT FORM -->
     <section id="page-input" aria-label="Input Pesanan Baru" hidden>
         <div class="container">
             <h1>Input Pesanan</h1>
@@ -346,6 +367,10 @@
     <button type="button" class="nav-item active" id="nav-dashboard">
         <span>📊</span> Dashboard
     </button>
+    <!-- TOMBOL REKAP PRODUK BARU -->
+    <button type="button" class="nav-item" id="nav-rekap">
+        <span>📦</span> Rekap Produk
+    </button>
     <button type="button" class="nav-item" id="nav-input">
         <span>📝</span> Input Data
     </button>
@@ -431,6 +456,7 @@ const API = {
         if (cachedData) {
             State.allData = JSON.parse(cachedData);
             UI.renderDashboard();
+            UI.renderRekap(); // Update view rekap
         }
 
         if (State.isSyncing) return;
@@ -452,6 +478,7 @@ const API = {
             localStorage.setItem(Config.CACHE_KEY, JSON.stringify(State.allData));
             UI.updateSyncStatus('success');
             UI.renderDashboard();
+            UI.renderRekap(); // Update view rekap setelah sinkronisasi
         } catch (error) {
             UI.updateSyncStatus('error', error.message);
         } finally {
@@ -471,6 +498,7 @@ const UI = {
     init() {
         State.selectedDate = Utils.getToday();
         document.getElementById('filterTanggal').value = State.selectedDate;
+        document.getElementById('filterTanggalRekap').value = State.selectedDate;
         document.getElementById('input_tanggal').value = State.selectedDate;
         
         this.bindEvents();
@@ -478,12 +506,25 @@ const UI = {
 
     bindEvents() {
         document.getElementById('nav-dashboard').addEventListener('click', () => this.switchPage('dashboard'));
+        document.getElementById('nav-rekap').addEventListener('click', () => this.switchPage('rekap'));
         document.getElementById('nav-input').addEventListener('click', () => this.switchPage('input'));
         
+        // Filter Tanggal di Dashboard (Sinkronisasi dengan Rekap)
         document.getElementById('filterTanggal').addEventListener('change', (e) => {
             State.selectedDate = e.target.value;
+            document.getElementById('filterTanggalRekap').value = State.selectedDate; 
             this.renderDashboard();
+            this.renderRekap();
         });
+        
+        // Filter Tanggal di Rekap (Sinkronisasi dengan Dashboard)
+        document.getElementById('filterTanggalRekap').addEventListener('change', (e) => {
+            State.selectedDate = e.target.value;
+            document.getElementById('filterTanggal').value = State.selectedDate; 
+            this.renderDashboard();
+            this.renderRekap();
+        });
+
         document.getElementById('btn-show-details').addEventListener('click', () => this.toggleDetails(true));
         document.getElementById('btn-back').addEventListener('click', () => this.toggleDetails(false));
         document.getElementById('searchInput').addEventListener('input', (e) => this.filterCards(e.target.value));
@@ -506,14 +547,15 @@ const UI = {
     },
 
     switchPage(page) {
-        const isDash = page === 'dashboard';
-        document.getElementById('page-dashboard').hidden = !isDash;
-        document.getElementById('page-input').hidden = isDash;
+        document.getElementById('page-dashboard').hidden = page !== 'dashboard';
+        document.getElementById('page-rekap').hidden = page !== 'rekap';
+        document.getElementById('page-input').hidden = page !== 'input';
         
-        document.getElementById('nav-dashboard').classList.toggle('active', isDash);
-        document.getElementById('nav-input').classList.toggle('active', !isDash);
+        document.getElementById('nav-dashboard').classList.toggle('active', page === 'dashboard');
+        document.getElementById('nav-rekap').classList.toggle('active', page === 'rekap');
+        document.getElementById('nav-input').classList.toggle('active', page === 'input');
 
-        if (isDash) {
+        if (page === 'dashboard' || page === 'rekap') {
             API.getData();
         }
     },
@@ -552,7 +594,7 @@ const UI = {
         let listHTML = '';
 
         const groupedOrders = {};
-        const orderedIds = []; // Menggunakan Array untuk melacak urutan ASLI dari spreadsheet
+        const orderedIds = []; // Menggunakan Array untuk melacak urutan ASLI dari spreadsheet[span_0](start_span)[span_0](end_span)
 
         State.allData.forEach(row => {
             if (!row['Tanggal']) return;
@@ -579,7 +621,7 @@ const UI = {
                         items: [],
                         totalOrderQty: 0
                     };
-                    orderedIds.push(id); // Simpan ID agar urutannya sama persis seperti di Sheet
+                    orderedIds.push(id); // Simpan ID agar urutannya sama persis seperti di Sheet[span_1](start_span)[span_1](end_span)
                 }
 
                 groupedOrders[id].items.push({
@@ -593,7 +635,7 @@ const UI = {
             }
         });
 
-        // Menggunakan urutan asli (orderedIds) tanpa fungsi .sort() tambahan
+        // Menggunakan urutan asli (orderedIds) tanpa fungsi .sort() tambahan[span_2](start_span)[span_2](end_span)
         const sortedOrders = orderedIds.map(id => groupedOrders[id]);
 
         sortedOrders.forEach(order => {
@@ -683,6 +725,69 @@ const UI = {
         
         document.getElementById('order-list-container').innerHTML = listHTML;
         this.filterCards(document.getElementById('searchInput').value); 
+    },
+
+    // --- FUNGSI BARU: RENDER REKAP PRODUK ---
+    renderRekap() {
+        const groupedRekap = {};
+        let totalSemuaQty = 0;
+
+        // Kumpulkan dan gabungkan jumlah barang berdasarkan Produk + Warna + Ukuran[span_3](start_span)[span_3](end_span)
+        State.allData.forEach(row => {
+            if (!row['Tanggal']) return;
+            const rawDate = String(row['Tanggal']).replace(/^'/, ''); 
+            const rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
+            
+            if (rowDate === State.selectedDate) {
+                const produk = Utils.escapeHTML(row['Nama Produk'] || '-');
+                const warna = Utils.escapeHTML(row['Warna'] || '-');
+                const ukuran = Utils.escapeHTML(row['Ukuran'] || '-');
+                const qty = parseInt(row['Quantity']) || 0;
+                
+                // Kunci unik untuk menggabungkan varian yang persis sama
+                const key = `${produk}_${warna}_${ukuran}`;
+                
+                if (!groupedRekap[key]) {
+                    groupedRekap[key] = { produk, warna, ukuran, qty: 0 };
+                }
+                
+                groupedRekap[key].qty += qty;
+                totalSemuaQty += qty;
+            }
+        });
+
+        // Urutkan alfabetis berdasarkan Nama Produk
+        const sortedRekap = Object.values(groupedRekap).sort((a, b) => a.produk.localeCompare(b.produk));
+        
+        let rekapHTML = '';
+        sortedRekap.forEach(item => {
+            const imgURL = Utils.getProductImage(item.produk, item.warna); // Gambar otomatis[span_4](start_span)[span_4](end_span)
+            
+            rekapHTML += `
+            <div class="rekap-card">
+                <img src="${imgURL}" alt="${item.warna}" class="rekap-img" loading="lazy" crossorigin="anonymous">
+                <div class="rekap-info">
+                    <div class="rekap-title">${item.produk}</div>
+                    <div class="rekap-variant">Warna: ${item.warna} &nbsp;|&nbsp; Ukuran: ${item.ukuran}</div>
+                </div>
+                <div class="rekap-qty">${item.qty}</div>
+            </div>`;
+        });
+
+        if (!rekapHTML) {
+            rekapHTML = `<div class="empty-state">Belum ada barang yang terjual untuk direkap pada tanggal ini.</div>`;
+        } else {
+            // Tambahkan total keseluruhan di bagian atas list
+            rekapHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius); margin-bottom: 20px;">
+                    <span style="font-weight: 700; color: var(--primary-hover); font-size: 15px;">Total Keseluruhan Barang:</span>
+                    <span style="font-weight: 800; font-size: 20px; color: var(--primary);">${totalSemuaQty} pcs</span>
+                </div>
+                ${rekapHTML}
+            `;
+        }
+        
+        document.getElementById('rekap-list-container').innerHTML = rekapHTML;
     },
 
     filterCards(keyword) {
