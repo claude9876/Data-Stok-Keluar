@@ -679,7 +679,8 @@ const UI = {
                 const qtyVal = Utils.getVal(row, 5, ['Quantity', 'Qty', 'Jumlah']);
                 const qty = parseInt(qtyVal) || 0;
                 
-                const idRaw = Utils.getVal(row, 1, ['ID', 'No. Resi', 'Resi']);
+                const idRawVal = Utils.getVal(row, 1, ['ID', 'No. Resi', 'Resi']);
+                const idRaw = (idRawVal === null || idRawVal === undefined) ? '' : String(idRawVal).trim();
                 const id = idRaw || JSON.stringify(row); 
                 
                 const statusVal = Utils.getVal(row, 6, ['Status', 'Status Pesanan']);
@@ -692,17 +693,8 @@ const UI = {
                 if (isBatal) statusText = 'batal';
                 else if (isTerkirim) statusText = 'terkirim';
                 
-                // Dihitung per QUANTITY baris (bukan per jumlah order/resi),
-                // supaya Perlu Dikirim + Dikirim selalu = Total Produk Terjual,
-                // walau ada resi yang isinya lebih dari 1 varian/warna.
-                if (isBatal) {
-                    countBatal += qty;
-                } else if (isTerkirim) {
-                    countTerkirim += qty;
-                    totalQty += qty;
-                } else {
-                    countMasuk += qty;
-                    totalQty += qty;
+                if (!isBatal) {
+                    totalQty += qty; 
                 }
                 
                 if (!groupedOrders[id]) {
@@ -734,6 +726,10 @@ const UI = {
         const sortedOrders = orderedIds.map(id => groupedOrders[id]);
 
         sortedOrders.forEach(order => {
+            if (order.isBatal) countBatal++;
+            else if (order.isTerkirim) countTerkirim++;
+            else countMasuk++;
+
             let badgeStatus = '';
             if (order.isBatal) {
                 badgeStatus = `<span class="badge badge-danger">Dibatalkan</span>`;
