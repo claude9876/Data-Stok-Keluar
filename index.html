@@ -64,6 +64,7 @@
         .sync-status { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;}
         .sync-status.offline { color: var(--danger); }
 
+        /* PERUBAHAN TATA LETAK GRID MENJADI 3 KOLOM */
         .dashboard-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .card-stat { border-radius: var(--radius); padding: 16px 12px; text-align: center; color: white; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(255,255,255,0.1); }
         .card-stat:active { transform: scale(0.98); }
@@ -99,8 +100,15 @@
         }
         .order-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
 
-        .order-card.unconfirmed { background-color: rgba(245, 158, 11, 0.08); border-color: #fbd38d; }
-        .order-card.cancelled { background-color: rgba(239, 68, 68, 0.05); border-color: #fecaca; }
+        .order-card.unconfirmed {
+            background-color: rgba(245, 158, 11, 0.08); 
+            border-color: #fbd38d;
+        }
+        /* STYLING KHUSUS PESANAN BATAL */
+        .order-card.cancelled {
+            background-color: rgba(239, 68, 68, 0.05); 
+            border-color: #fecaca;
+        }
         .order-card.cancelled .grouped-item-info .product-name, 
         .order-card.cancelled .variant { text-decoration: line-through; opacity: 0.7;}
 
@@ -120,7 +128,7 @@
         .badge-platform { background: #f1f5f9; color: #475569; }
         .badge-warning { background: #fef3c7; color: #b45309; }
         .badge-success { background: #d1fae5; color: #047857; }
-        .badge-danger { background: #fee2e2; color: #b91c1c; }
+        .badge-danger { background: #fee2e2; color: #b91c1c; } /* BADGE BARU UNTUK BATAL */
         
         .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;}
         .btn-download { background: #f8fafc; border: 1px solid var(--border); cursor: pointer; font-size: 18px; padding: 6px 10px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
@@ -196,6 +204,7 @@
 <div id="toast-container" aria-live="polite"></div>
 
 <main>
+    <!-- HALAMAN 1: DASHBOARD -->
     <section id="page-dashboard" aria-label="Dashboard Utama">
         <div class="container">
             <div id="view-summary">
@@ -250,6 +259,7 @@
         </div>
     </section>
 
+    <!-- HALAMAN 2: REKAP PRODUK -->
     <section id="page-rekap" aria-label="Rekap Penjualan Produk" hidden>
         <div class="container">
             <h1>Rekap Produk Terjual</h1>
@@ -263,6 +273,7 @@
         </div>
     </section>
 
+    <!-- HALAMAN 3: INPUT FORM -->
     <section id="page-input" aria-label="Input Pesanan Baru" hidden>
         <div class="container">
             <h1>Input Pesanan</h1>
@@ -323,7 +334,7 @@
                     <input type="text" id="warna" list="daftar-warna" placeholder="Contoh: Hitam, Maroon" required>
                     <datalist id="daftar-warna">
                         <option value="Hitam"><option value="Putih"><option value="Maroon"><option value="Maron">
-                        <option value="Cokelat"><option value="Kuning"><option value="Butter"><option value="Blue Soft (ungu)">
+                        <option value="Cokelat"><option value="Kuning"><option value="Blue Soft (ungu)">
                         <option value="Dark Blue"><option value="Hitam dan Putih"><option value="Putih dan Cokelat">
                     </datalist>
                 </div>
@@ -376,7 +387,7 @@
 
 <script>
 /**
- * STRUKTUR APLIKASI MODULAR - UPDATE V4 (FIX WARNA BUTTER)
+ * STRUKTUR APLIKASI MODULAR - UPDATE V3 (WITH BATAL STATUS)
  */
 
 const Config = {
@@ -416,7 +427,6 @@ const Utils = {
             "maron": "https://down-id.img.susercontent.com/file/id-11134207-81ztg-msjtzri4g6bmd4@resize_w1080_nl.webp",
             "cokelat": "https://down-id.img.susercontent.com/file/id-11134207-81ztk-msjtzri4hkw255@resize_w1080_nl.webp",
             "kuning": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
-            "butter": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
             "blue soft": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp",
             "ungu": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp" 
         };
@@ -427,7 +437,7 @@ const Utils = {
 
         let bgHex = "e2e8f0"; let txtHex = "334155";
         if (w.includes('navy') || w.includes('biru')) { bgHex = "1e3a8a"; txtHex = "ffffff"; }
-        else if (w.includes('cream') || w.includes('krem') || w.includes('butter') || w.includes('kuning')) { bgHex = "fef3c7"; txtHex = "92400e"; }
+        else if (w.includes('cream') || w.includes('krem')) { bgHex = "fef3c7"; txtHex = "92400e"; }
         else if (w.includes('hijau') || w.includes('green')) { bgHex = "166534"; txtHex = "ffffff"; }
         else if (w.includes('pink') || w.includes('merah muda')) { bgHex = "fbcfe8"; txtHex = "831843"; }
 
@@ -644,6 +654,7 @@ const UI = {
                 if (isBatal) statusText = 'batal';
                 else if (isTerkirim) statusText = 'terkirim';
                 
+                // Jangan hitung barang batal ke total produk terjual
                 if (!isBatal) {
                     totalQty += qty; 
                 }
@@ -710,6 +721,7 @@ const UI = {
             }
             
             const isConfirmed = confirmedOrders.includes(order.id);
+            // Pesanan batal tidak butuh tombol konfirmasi
             const confirmBtnHTML = (isConfirmed || order.isBatal) ? '' : `<button type="button" class="btn-confirm" onclick="UI.confirmOrder('${order.id}', this)">✅ Konfirmasi</button>`;
             
             let cardClasses = 'order-card';
@@ -787,6 +799,7 @@ const UI = {
             const rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
             
             if (rowDate === State.selectedDate) {
+                // Lewati pesanan batal dari rekap!
                 const status = (row['Status'] || '').toLowerCase();
                 if (status.includes('batal') || status.includes('cancel')) return;
 
