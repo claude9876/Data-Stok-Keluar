@@ -2,7 +2,6 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <!-- Penyesuaian Viewport untuk Android agar tidak zoom otomatis saat input data -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sistem Manajemen Pesanan Fashion</title>
 
@@ -17,12 +16,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        /* --- 1. CSS VARIABLES & BASE SETUP --- */
         :root {
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
             --success: #059669; 
             --warning: #d97706; 
+            --danger: #ef4444;
             --bg-body: #f8fafc; 
             --bg-surface: #ffffff;
             --text-main: #0f172a; 
@@ -40,7 +39,6 @@
         
         body { 
             background-color: var(--bg-body); color: var(--text-main); margin: 0; 
-            /* Padding bawah diperbesar agar konten paling bawah tidak tertutup menu */
             padding: 0 0 110px 0; line-height: 1.5; -webkit-font-smoothing: antialiased; 
         }
         
@@ -58,35 +56,35 @@
         h1 { font-size: 1.75rem; margin-bottom: 24px; }
         h2 { font-size: 1.5rem; }
 
-        /* --- 2. LAYOUT & GRID SYSTEM --- */
         .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         
-        /* --- 3. DASHBOARD WIDGETS --- */
         .filter-section { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
         .filter-section input { padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-weight: 600; font-size: 15px; color: var(--text-main); box-shadow: var(--shadow-sm); }
         
         .sync-status { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;}
-        .sync-status.offline { color: #dc2626; }
+        .sync-status.offline { color: var(--danger); }
 
-        .dashboard-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
-        .card-stat { border-radius: var(--radius); padding: 24px 20px; text-align: center; color: white; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(255,255,255,0.1); }
+        /* PERUBAHAN TATA LETAK GRID MENJADI 3 KOLOM */
+        .dashboard-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+        .card-stat { border-radius: var(--radius); padding: 16px 12px; text-align: center; color: white; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(255,255,255,0.1); }
         .card-stat:active { transform: scale(0.98); }
         .card-stat:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
-        .card-stat h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; opacity: 0.9; }
-        .card-stat .angka { font-size: 48px; font-weight: 800; margin-top: 12px; line-height: 1; }
+        .card-stat h3 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; opacity: 0.9; }
+        .card-stat .angka { font-size: 36px; font-weight: 800; margin-top: 8px; line-height: 1; }
         
         .bg-masuk { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .bg-terkirim { background: linear-gradient(135deg, #10b981, #059669); }
-        .bg-total { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); grid-column: span 2; cursor: pointer; }
+        .bg-batal { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+        .bg-total { background: linear-gradient(135deg, var(--primary), var(--primary-hover)); grid-column: span 3; cursor: pointer; padding: 24px 20px;}
+        .bg-total .angka { font-size: 48px; }
 
-        /* --- 4. TABS & ORDER CARDS --- */
         .detail-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
         .detail-header h2 { margin: 0; flex: 1; text-align: left; }
         
         .tabs { display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; background: #f1f5f9; padding: 6px; border-radius: 12px; }
         .tab-btn { 
-            flex: 1; min-width: 100px; padding: 12px 16px; border-radius: 8px; border: none; 
-            background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 14px;
+            flex: 1; min-width: 80px; padding: 12px 10px; border-radius: 8px; border: none; 
+            background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s ease; font-size: 13px; white-space: nowrap;
         }
         .tab-btn:hover { color: var(--text-main); }
         .tab-btn.active { background: white; color: var(--primary); box-shadow: var(--shadow-sm); }
@@ -102,29 +100,24 @@
         }
         .order-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
 
-        /* --- STYLING PESANAN BELUM DIKONFIRMASI --- */
         .order-card.unconfirmed {
-            background-color: rgba(245, 158, 11, 0.08); /* Opacity orange tipis */
+            background-color: rgba(245, 158, 11, 0.08); 
             border-color: #fbd38d;
         }
+        /* STYLING KHUSUS PESANAN BATAL */
+        .order-card.cancelled {
+            background-color: rgba(239, 68, 68, 0.05); 
+            border-color: #fecaca;
+        }
+        .order-card.cancelled .grouped-item-info .product-name, 
+        .order-card.cancelled .variant { text-decoration: line-through; opacity: 0.7;}
+
         .btn-confirm {
-            background: #f59e0b;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+            background: #f59e0b; color: white; border: none; padding: 6px 12px;
+            border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+            transition: 0.2s; display: inline-flex; align-items: center; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
         }
-        .btn-confirm:hover {
-            background: #d97706;
-            transform: translateY(-1px);
-        }
+        .btn-confirm:hover { background: #d97706; transform: translateY(-1px); }
         
         .order-card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 4px; gap: 16px; flex-wrap: wrap;}
         .buyer-info { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 200px;}
@@ -135,6 +128,7 @@
         .badge-platform { background: #f1f5f9; color: #475569; }
         .badge-warning { background: #fef3c7; color: #b45309; }
         .badge-success { background: #d1fae5; color: #047857; }
+        .badge-danger { background: #fee2e2; color: #b91c1c; } /* BADGE BARU UNTUK BATAL */
         
         .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;}
         .btn-download { background: #f8fafc; border: 1px solid var(--border); cursor: pointer; font-size: 18px; padding: 6px 10px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
@@ -142,15 +136,9 @@
 
         .order-card-body { padding-top: 0; }
         
-        .grouped-item { 
-            padding: 16px 0; border-bottom: 1px dashed var(--border); 
-            display: flex; gap: 16px; align-items: center; 
-        }
+        .grouped-item { padding: 16px 0; border-bottom: 1px dashed var(--border); display: flex; gap: 16px; align-items: center; }
         .grouped-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .grouped-item-img { 
-            width: 56px; height: 56px; border-radius: 10px; 
-            object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; background: #f8fafc; box-shadow: var(--shadow-sm);
-        }
+        .grouped-item-img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; background: #f8fafc; box-shadow: var(--shadow-sm); }
         .grouped-item-info { flex: 1; }
         .grouped-item-info .product-name { font-weight: 600; font-size: 15px; color: var(--text-main); margin-bottom: 4px; }
         .grouped-item-info .variant { color: var(--text-muted); font-size: 13px; font-weight: 500; }
@@ -161,7 +149,6 @@
         
         .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); background: #f8fafc; border-radius: var(--radius); border: 1px dashed #cbd5e1; font-weight: 500; }
 
-        /* --- STYLING KHUSUS MENU REKAP PRODUK --- */
         .rekap-card { display: flex; gap: 16px; align-items: center; background: #fff; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; box-shadow: var(--shadow-sm); transition: transform 0.2s;}
         .rekap-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
         .rekap-img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); background: #f8fafc; flex-shrink: 0;}
@@ -170,23 +157,21 @@
         .rekap-variant { color: var(--text-muted); font-size: 14px; font-weight: 500; }
         .rekap-qty { font-weight: 800; color: var(--primary); background: #eff6ff; padding: 10px 16px; border-radius: 10px; font-size: 16px; border: 1px solid #bfdbfe; text-align: center; min-width: 80px;}
 
-        /* --- 5. FORMS, INPUTS & CART SYSTEM --- */
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: var(--text-main); }
         input, select { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; transition: all 0.2s ease; background-color: #f8fafc; color: var(--text-main); }
         input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 4px rgba(37,99,235,0.1); background-color: #ffffff; }
-        input::placeholder { color: #94a3b8; }
         
         .btn { width: 100%; padding: 16px; border-radius: var(--radius-sm); font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s ease; letter-spacing: 0.3px; }
         .btn-primary { background: var(--success); color: white; margin-top: 12px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
-        .btn-primary:hover { background: #047857; box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); transform: translateY(-1px); }
+        .btn-primary:hover { background: #047857; transform: translateY(-1px); }
         .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; transform: none; }
         
         .btn-secondary { background: #f1f5f9; color: var(--text-main); width: auto; padding: 10px 18px; border: 1px solid var(--border); font-size: 14px; }
         .btn-secondary:hover { background: #e2e8f0; }
         
         .btn-add { background: var(--primary); color: white; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
-        .btn-add:hover { background: var(--primary-hover); box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3); transform: translateY(-1px); }
+        .btn-add:hover { background: var(--primary-hover); transform: translateY(-1px); }
 
         .section-divider { border: 0; border-top: 2px dashed var(--border); margin: 32px 0; }
         .section-title { font-size: 14px; font-weight: 700; color: var(--text-muted); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -199,46 +184,27 @@
         .btn-remove { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
         .btn-remove:hover { background: #fee2e2; border-color: #fca5a5; }
 
-        /* --- 6. TOAST & BOTTOM NAV UNTUK ANDROID --- */
         #toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .toast { padding: 16px 24px; border-radius: 12px; color: white; font-weight: 600; box-shadow: var(--shadow-lg); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); font-size: 14px; }
         .toast.success { background-color: var(--success); }
-        .toast.error { background-color: #ef4444; }
+        .toast.error { background-color: var(--danger); }
         @keyframes slideIn { from { transform: translateX(100%) scale(0.95); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
 
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: var(--bg-surface);
-            box-shadow: 0 -8px 24px rgba(0,0,0,0.08); display: flex; z-index: 1000;
-            /* Kombinasi env dan fallback untuk Android gesture bar */
-            padding-bottom: calc(env(safe-area-inset-bottom) + 8px); 
-            border-top: 1px solid var(--border);
-        }
-        .nav-item {
-            flex: 1; padding: 12px 0 14px 0; background: transparent; border: none; 
-            border-top: 3px solid transparent; /* Border transparan agar tinggi tombol konsisten (tidak loncat) */
-            font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; 
-            display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent; /* Hilangkan kotak biru klik bawaan Android */
-            outline: none;
-        }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: var(--bg-surface); box-shadow: 0 -8px 24px rgba(0,0,0,0.08); display: flex; z-index: 1000; padding-bottom: calc(env(safe-area-inset-bottom) + 8px); border-top: 1px solid var(--border); }
+        .nav-item { flex: 1; padding: 12px 0 14px 0; background: transparent; border: none; border-top: 3px solid transparent; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.2s ease; -webkit-tap-highlight-color: transparent; outline: none; }
         .nav-item span { font-size: 24px; transition: transform 0.2s; }
         .nav-item:hover { color: var(--primary); }
         .nav-item:hover span { transform: translateY(-2px); }
-        
-        /* Modifikasi style active agar lebih smooth di Android */
-        .nav-item.active { 
-            color: var(--primary); 
-            border-top: 3px solid var(--primary); 
-            background: linear-gradient(180deg, #eff6ff 0%, transparent 100%); 
-        }
+        .nav-item.active { color: var(--primary); border-top: 3px solid var(--primary); background: linear-gradient(180deg, #eff6ff 0%, transparent 100%); }
     </style>
 </head>
 <body>
 
+<audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 <div id="toast-container" aria-live="polite"></div>
 
 <main>
-    <!-- HALAMAN 1: DASHBOARD UTAMA -->
+    <!-- HALAMAN 1: DASHBOARD -->
     <section id="page-dashboard" aria-label="Dashboard Utama">
         <div class="container">
             <div id="view-summary">
@@ -259,6 +225,10 @@
                         <h3>Dikirim</h3>
                         <div class="angka" id="stat-terkirim">0</div>
                     </div>
+                    <div class="card-stat bg-batal">
+                        <h3>Batal</h3>
+                        <div class="angka" id="stat-batal">0</div>
+                    </div>
                     <div class="card-stat bg-total" id="btn-show-details" role="button" tabindex="0">
                         <h3>Total Produk Terjual</h3>
                         <div class="angka" id="stat-total">0</div>
@@ -277,6 +247,7 @@
                     <button class="tab-btn active" data-target="all">Semua</button>
                     <button class="tab-btn" data-target="masuk">Perlu Dikirim</button>
                     <button class="tab-btn" data-target="terkirim">Dikirim</button>
+                    <button class="tab-btn" data-target="batal">Batal</button>
                 </div>
 
                 <div class="search-box">
@@ -288,7 +259,7 @@
         </div>
     </section>
 
-    <!-- HALAMAN 2: REKAP PRODUK (BARU) -->
+    <!-- HALAMAN 2: REKAP PRODUK -->
     <section id="page-rekap" aria-label="Rekap Penjualan Produk" hidden>
         <div class="container">
             <h1>Rekap Produk Terjual</h1>
@@ -342,6 +313,7 @@
                     <select id="status" required>
                         <option value="Masuk">Perlu Dikirim (Masuk)</option>
                         <option value="Terkirim">Dikirim (Selesai)</option>
+                        <option value="Batal">Dibatalkan (Batal)</option>
                     </select>
                 </div>
 
@@ -350,10 +322,10 @@
                 <div class="section-title">2. Detail Barang / Varian</div>
                 <div class="form-group">
                     <label for="nama_produk">Nama Produk</label>
-                    <input type="text" id="nama_produk" list="daftar-produk" placeholder="Contoh: Diora Pants" required>
+                    <input type="text" id="nama_produk" list="daftar-produk" placeholder="Contoh: Kemeja polkadot" required>
                     <datalist id="daftar-produk">
-                        <option value="Diora Pants">
-                        <option value="Sakura Dress">
+                        <option value="Kemeja polkadot">
+                        <option value="Jeans Cutbray">
                     </datalist>
                 </div>
                 
@@ -361,9 +333,9 @@
                     <label for="warna">Varian Warna</label>
                     <input type="text" id="warna" list="daftar-warna" placeholder="Contoh: Hitam, Maroon" required>
                     <datalist id="daftar-warna">
-                        <option value="Hitam"><option value="Putih"><option value="Maroon">
-                        <option value="Cokelat"><option value="Kuning"><option value="Soft Blue">
-                        <option value="Navy"><option value="Cream"><option value="Ungu">
+                        <option value="Hitam"><option value="Putih"><option value="Maroon"><option value="Maron">
+                        <option value="Cokelat"><option value="Kuning"><option value="Blue Soft (ungu)">
+                        <option value="Dark Blue"><option value="Hitam dan Putih"><option value="Putih dan Cokelat">
                     </datalist>
                 </div>
 
@@ -415,12 +387,13 @@
 
 <script>
 /**
- * STRUKTUR APLIKASI MODULAR
+ * STRUKTUR APLIKASI MODULAR - UPDATE V3 (WITH BATAL STATUS)
  */
 
 const Config = {
-    API_URL: 'https://script.google.com/macros/s/AKfycbyUOkCIJFXL6ImObIuKpCLs2nTFOtx-XZVA16RxXLaPFkx6fxZs294VpTopWwrw4LNU/exec',
-    SYNC_INTERVAL: 5000,   // <-- Sekarang menjadi 5 detik
+    // ⚠️ PENTING: Ganti URL di bawah ini dengan Web App URL Apps Script Anda
+    API_URL: 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec',
+    SYNC_INTERVAL: 5000, 
     FETCH_TIMEOUT: 15000,
     CACHE_KEY: 'fashion_orders_cache'
 };
@@ -451,9 +424,10 @@ const Utils = {
             "hitam": "https://down-id.img.susercontent.com/file/id-11134207-81zte-msjtzri73oxt92@resize_w1080_nl.webp",
             "putih": "https://down-id.img.susercontent.com/file/id-11134207-81ztp-msjtzri4err6bf@resize_w1080_nl.webp",
             "maroon": "https://down-id.img.susercontent.com/file/id-11134207-81ztg-msjtzri4g6bmd4@resize_w1080_nl.webp",
+            "maron": "https://down-id.img.susercontent.com/file/id-11134207-81ztg-msjtzri4g6bmd4@resize_w1080_nl.webp",
             "cokelat": "https://down-id.img.susercontent.com/file/id-11134207-81ztk-msjtzri4hkw255@resize_w1080_nl.webp",
             "kuning": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
-            "soft blue": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp",
+            "blue soft": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp",
             "ungu": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp" 
         };
 
@@ -461,9 +435,7 @@ const Utils = {
             if (w.includes(keyColor)) return urlFoto;
         }
 
-        let bgHex = "e2e8f0"; 
-        let txtHex = "334155";
-
+        let bgHex = "e2e8f0"; let txtHex = "334155";
         if (w.includes('navy') || w.includes('biru')) { bgHex = "1e3a8a"; txtHex = "ffffff"; }
         else if (w.includes('cream') || w.includes('krem')) { bgHex = "fef3c7"; txtHex = "92400e"; }
         else if (w.includes('hijau') || w.includes('green')) { bgHex = "166534"; txtHex = "ffffff"; }
@@ -505,11 +477,18 @@ const API = {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const text = await res.text();
             
+            const oldLength = State.allData.length;
+            
             try {
                 let json = JSON.parse(text);
                 State.allData = Array.isArray(json) ? json : (json.data || []);
             } catch (e) {
                 State.allData = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+            }
+            
+            if (oldLength > 0 && State.allData.length > oldLength) {
+                const jumlahBaru = State.allData.length - oldLength;
+                UI.playNotif(jumlahBaru);
             }
             
             localStorage.setItem(Config.CACHE_KEY, JSON.stringify(State.allData));
@@ -641,6 +620,7 @@ const UI = {
         let totalQty = 0;
         let countMasuk = 0;
         let countTerkirim = 0;
+        let countBatal = 0;
         let listHTML = '';
 
         const groupedOrders = {};
@@ -663,19 +643,30 @@ const UI = {
             
             if (rowDate === State.selectedDate) {
                 const qty = parseInt(row['Quantity']) || 0;
-                totalQty += qty; 
                 
                 const id = row['ID'] || JSON.stringify(row); 
                 const status = (row['Status'] || '').toLowerCase();
-                const isTerkirim = status.includes('terkirim') || status.includes('kirim');
+                
+                let isBatal = status.includes('batal') || status.includes('cancel');
+                let isTerkirim = status.includes('terkirim') || status.includes('kirim') || status.includes('selesai');
+                
+                let statusText = 'masuk';
+                if (isBatal) statusText = 'batal';
+                else if (isTerkirim) statusText = 'terkirim';
+                
+                // Jangan hitung barang batal ke total produk terjual
+                if (!isBatal) {
+                    totalQty += qty; 
+                }
                 
                 if (!groupedOrders[id]) {
                     groupedOrders[id] = {
                         id: Utils.escapeHTML(row['ID'] || '-'),
                         platform: Utils.escapeHTML(row['Platform'] || '-'),
                         pembeli: Utils.escapeHTML(row['Nama Pembeli'] || 'Tanpa Nama'),
-                        statusText: isTerkirim ? 'terkirim' : 'masuk',
+                        statusText: statusText,
                         isTerkirim: isTerkirim,
+                        isBatal: isBatal,
                         waktuInput: rawDate, 
                         items: [],
                         totalOrderQty: 0
@@ -697,12 +688,18 @@ const UI = {
         const sortedOrders = orderedIds.map(id => groupedOrders[id]);
 
         sortedOrders.forEach(order => {
-            if (order.isTerkirim) countTerkirim++;
+            if (order.isBatal) countBatal++;
+            else if (order.isTerkirim) countTerkirim++;
             else countMasuk++;
 
-            let badgeStatus = order.isTerkirim 
-                ? `<span class="badge badge-success">Dikirim</span>` 
-                : `<span class="badge badge-warning">Perlu Dikirim</span>`;
+            let badgeStatus = '';
+            if (order.isBatal) {
+                badgeStatus = `<span class="badge badge-danger">Dibatalkan</span>`;
+            } else if (order.isTerkirim) {
+                badgeStatus = `<span class="badge badge-success">Dikirim</span>`;
+            } else {
+                badgeStatus = `<span class="badge badge-warning">Perlu Dikirim</span>`;
+            }
             
             let formattedTime = "";
             const hasTime = order.waktuInput.includes('T') || order.waktuInput.includes(':');
@@ -724,8 +721,12 @@ const UI = {
             }
             
             const isConfirmed = confirmedOrders.includes(order.id);
-            const unconfirmedClass = isConfirmed ? '' : ' unconfirmed';
-            const confirmBtnHTML = isConfirmed ? '' : `<button type="button" class="btn-confirm" onclick="UI.confirmOrder('${order.id}', this)">✅ Konfirmasi</button>`;
+            // Pesanan batal tidak butuh tombol konfirmasi
+            const confirmBtnHTML = (isConfirmed || order.isBatal) ? '' : `<button type="button" class="btn-confirm" onclick="UI.confirmOrder('${order.id}', this)">✅ Konfirmasi</button>`;
+            
+            let cardClasses = 'order-card';
+            if (order.isBatal) cardClasses += ' cancelled';
+            else if (!isConfirmed) cardClasses += ' unconfirmed';
 
             let itemsHTML = '';
             order.items.forEach(item => {
@@ -743,7 +744,7 @@ const UI = {
             });
 
             listHTML += `
-            <div class="order-card${unconfirmedClass}" data-status="${order.statusText}">
+            <div class="${cardClasses}" data-status="${order.statusText}">
                 <div class="order-card-header">
                     <div class="buyer-info">
                         <div class="resi-title">
@@ -777,6 +778,7 @@ const UI = {
 
         document.getElementById('stat-masuk').innerText = countMasuk;
         document.getElementById('stat-terkirim').innerText = countTerkirim;
+        document.getElementById('stat-batal').innerText = countBatal;
         document.getElementById('stat-total').innerText = totalQty;
         
         if (!listHTML) {
@@ -797,6 +799,10 @@ const UI = {
             const rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
             
             if (rowDate === State.selectedDate) {
+                // Lewati pesanan batal dari rekap!
+                const status = (row['Status'] || '').toLowerCase();
+                if (status.includes('batal') || status.includes('cancel')) return;
+
                 const produk = Utils.escapeHTML(row['Nama Produk'] || '-');
                 const warna = Utils.escapeHTML(row['Warna'] || '-');
                 const ukuran = Utils.escapeHTML(row['Ukuran'] || '-');
@@ -895,7 +901,7 @@ const UI = {
 
             const canvas = await html2canvas(card, {
                 scale: 2, 
-                backgroundColor: card.classList.contains('unconfirmed') ? '#fef3c7' : '#ffffff',
+                backgroundColor: card.classList.contains('unconfirmed') ? '#fef3c7' : (card.classList.contains('cancelled') ? '#fee2e2' : '#ffffff'),
                 useCORS: true 
             });
 
@@ -925,6 +931,17 @@ const UI = {
             toast.style.transform = 'translateX(100%) scale(0.95)';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    },
+
+    playNotif(jumlah) {
+        this.showToast(`🔔 Ada ${jumlah} barang pesanan baru masuk!`, 'success');
+        try {
+            const audio = document.getElementById('notifSound');
+            if(audio) {
+                audio.currentTime = 0; 
+                audio.play().catch(e => console.log('Autoplay diblokir browser', e));
+            }
+        } catch(e) {}
     },
 
     addToCart() {
