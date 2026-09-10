@@ -64,7 +64,6 @@
         .sync-status { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 500;}
         .sync-status.offline { color: var(--danger); }
 
-        /* PERUBAHAN TATA LETAK GRID MENJADI 3 KOLOM */
         .dashboard-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .card-stat { border-radius: var(--radius); padding: 16px 12px; text-align: center; color: white; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; border: 1px solid rgba(255,255,255,0.1); }
         .card-stat:active { transform: scale(0.98); }
@@ -100,15 +99,8 @@
         }
         .order-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
 
-        .order-card.unconfirmed {
-            background-color: rgba(245, 158, 11, 0.08); 
-            border-color: #fbd38d;
-        }
-        /* STYLING KHUSUS PESANAN BATAL */
-        .order-card.cancelled {
-            background-color: rgba(239, 68, 68, 0.05); 
-            border-color: #fecaca;
-        }
+        .order-card.unconfirmed { background-color: rgba(245, 158, 11, 0.08); border-color: #fbd38d; }
+        .order-card.cancelled { background-color: rgba(239, 68, 68, 0.05); border-color: #fecaca; }
         .order-card.cancelled .grouped-item-info .product-name, 
         .order-card.cancelled .variant { text-decoration: line-through; opacity: 0.7;}
 
@@ -128,7 +120,7 @@
         .badge-platform { background: #f1f5f9; color: #475569; }
         .badge-warning { background: #fef3c7; color: #b45309; }
         .badge-success { background: #d1fae5; color: #047857; }
-        .badge-danger { background: #fee2e2; color: #b91c1c; } /* BADGE BARU UNTUK BATAL */
+        .badge-danger { background: #fee2e2; color: #b91c1c; } 
         
         .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;}
         .btn-download { background: #f8fafc; border: 1px solid var(--border); cursor: pointer; font-size: 18px; padding: 6px 10px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
@@ -204,7 +196,6 @@
 <div id="toast-container" aria-live="polite"></div>
 
 <main>
-    <!-- HALAMAN 1: DASHBOARD -->
     <section id="page-dashboard" aria-label="Dashboard Utama">
         <div class="container">
             <div id="view-summary">
@@ -259,7 +250,6 @@
         </div>
     </section>
 
-    <!-- HALAMAN 2: REKAP PRODUK -->
     <section id="page-rekap" aria-label="Rekap Penjualan Produk" hidden>
         <div class="container">
             <h1>Rekap Produk Terjual</h1>
@@ -273,7 +263,6 @@
         </div>
     </section>
 
-    <!-- HALAMAN 3: INPUT FORM -->
     <section id="page-input" aria-label="Input Pesanan Baru" hidden>
         <div class="container">
             <h1>Input Pesanan</h1>
@@ -334,7 +323,7 @@
                     <input type="text" id="warna" list="daftar-warna" placeholder="Contoh: Hitam, Maroon" required>
                     <datalist id="daftar-warna">
                         <option value="Hitam"><option value="Putih"><option value="Maroon"><option value="Maron">
-                        <option value="Cokelat"><option value="Kuning"><option value="Blue Soft (ungu)">
+                        <option value="Cokelat"><option value="Kuning"><option value="Butter"><option value="Blue Soft (ungu)">
                         <option value="Dark Blue"><option value="Hitam dan Putih"><option value="Putih dan Cokelat">
                     </datalist>
                 </div>
@@ -387,7 +376,7 @@
 
 <script>
 /**
- * STRUKTUR APLIKASI MODULAR - UPDATE V3 (WITH BATAL STATUS)
+ * STRUKTUR APLIKASI MODULAR - UPDATE V5 (SISTEM ANTI-BADAI / AUTO DETECT FORMAT)
  */
 
 const Config = {
@@ -427,6 +416,7 @@ const Utils = {
             "maron": "https://down-id.img.susercontent.com/file/id-11134207-81ztg-msjtzri4g6bmd4@resize_w1080_nl.webp",
             "cokelat": "https://down-id.img.susercontent.com/file/id-11134207-81ztk-msjtzri4hkw255@resize_w1080_nl.webp",
             "kuning": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
+            "butter": "https://down-id.img.susercontent.com/file/id-11134207-81ztf-msr4z3opb6rr9d@resize_w1080_nl.webp",
             "blue soft": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp",
             "ungu": "https://down-id.img.susercontent.com/file/id-11134207-81ztl-msr4z3opclc7a1@resize_w1080_nl.webp" 
         };
@@ -437,12 +427,56 @@ const Utils = {
 
         let bgHex = "e2e8f0"; let txtHex = "334155";
         if (w.includes('navy') || w.includes('biru')) { bgHex = "1e3a8a"; txtHex = "ffffff"; }
-        else if (w.includes('cream') || w.includes('krem')) { bgHex = "fef3c7"; txtHex = "92400e"; }
+        else if (w.includes('cream') || w.includes('krem') || w.includes('butter') || w.includes('kuning')) { bgHex = "fef3c7"; txtHex = "92400e"; }
         else if (w.includes('hijau') || w.includes('green')) { bgHex = "166534"; txtHex = "ffffff"; }
         else if (w.includes('pink') || w.includes('merah muda')) { bgHex = "fbcfe8"; txtHex = "831843"; }
 
         const initial = w ? w.charAt(0).toUpperCase() : 'B'; 
         return `https://ui-avatars.com/api/?name=${initial}&background=${bgHex}&color=${txtHex}&size=100&bold=true&font-size=0.6`;
+    },
+
+    // Sistem Deteksi Kolom Pintar (Kebal perubahan judul header Sheets)
+    getVal(row, index, possibleKeys) {
+        // 1. Cek dari nama kunci yang kita kenali (case-sensitive)
+        for (let k of possibleKeys) {
+            if (row[k] !== undefined && row[k] !== null) return row[k];
+        }
+        // 2. Cek secara huruf kecil/besar (case-insensitive)
+        for (let k in row) {
+            if (possibleKeys.map(pk => pk.toLowerCase()).includes(k.toLowerCase())) return row[k];
+        }
+        // 3. Fallback Index: jika baris header utama tak sengaja tertimpa
+        const vals = Object.values(row);
+        if (vals.length > index) return vals[index];
+        return '';
+    },
+
+    // Sistem Deteksi Tanggal Pintar (Kebal perubahan format DD/MM atau MM/DD dari Excel/Sheets)
+    normalizeDate(rawDate) {
+        if (!rawDate) return '';
+        let s = String(rawDate).replace(/^'/, '').trim();
+        if (!s) return '';
+        
+        // Pola 1: YYYY-MM-DD (Standar sistem kita)
+        let matchYMD = s.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+        if (matchYMD) return `${matchYMD[1]}-${matchYMD[2].padStart(2,'0')}-${matchYMD[3].padStart(2,'0')}`;
+        
+        // Pola 2: MM/DD/YYYY atau DD/MM/YYYY dari Google Sheets
+        let matchDMY = s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+        if (matchDMY) {
+            let d = new Date(s.split(' ')[0]); // Coba sistem native baca dulu
+            if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            return `${matchDMY[3]}-${matchDMY[2].padStart(2,'0')}-${matchDMY[1].padStart(2,'0')}`; // Paksa konversi
+        }
+        
+        // Pola 3: Native JS Date/ISO string format panjang
+        let d2 = new Date(s);
+        if (!isNaN(d2)) return `${d2.getFullYear()}-${String(d2.getMonth()+1).padStart(2,'0')}-${String(d2.getDate()).padStart(2,'0')}`;
+        
+        // Fallback terakhir, pecah dari spasi atau T
+        if (s.includes('T')) return s.split('T')[0];
+        if (s.includes(' ')) return s.split(' ')[0];
+        return s;
     }
 };
 
@@ -630,22 +664,26 @@ const UI = {
         if (!confirmedOrders) {
             confirmedOrders = [];
             State.allData.forEach(row => {
-                const id = row['ID'] || JSON.stringify(row);
+                const idRaw = Utils.getVal(row, 1, ['ID', 'No. Resi', 'Resi']);
+                const id = idRaw || JSON.stringify(row);
                 if (!confirmedOrders.includes(id)) confirmedOrders.push(id);
             });
             localStorage.setItem('confirmed_orders', JSON.stringify(confirmedOrders));
         }
 
         State.allData.forEach(row => {
-            if (!row['Tanggal']) return;
-            const rawDate = String(row['Tanggal']).replace(/^'/, ''); 
-            const rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
+            const rawDateVal = Utils.getVal(row, 0, ['Tanggal', 'Date', 'Waktu']);
+            const rowDate = Utils.normalizeDate(rawDateVal);
             
             if (rowDate === State.selectedDate) {
-                const qty = parseInt(row['Quantity']) || 0;
+                const qtyVal = Utils.getVal(row, 5, ['Quantity', 'Qty', 'Jumlah']);
+                const qty = parseInt(qtyVal) || 0;
                 
-                const id = row['ID'] || JSON.stringify(row); 
-                const status = (row['Status'] || '').toLowerCase();
+                const idRaw = Utils.getVal(row, 1, ['ID', 'No. Resi', 'Resi']);
+                const id = idRaw || JSON.stringify(row); 
+                
+                const statusVal = Utils.getVal(row, 6, ['Status', 'Status Pesanan']);
+                const status = String(statusVal).toLowerCase();
                 
                 let isBatal = status.includes('batal') || status.includes('cancel');
                 let isTerkirim = status.includes('terkirim') || status.includes('kirim') || status.includes('selesai');
@@ -654,20 +692,19 @@ const UI = {
                 if (isBatal) statusText = 'batal';
                 else if (isTerkirim) statusText = 'terkirim';
                 
-                // Jangan hitung barang batal ke total produk terjual
                 if (!isBatal) {
                     totalQty += qty; 
                 }
                 
                 if (!groupedOrders[id]) {
                     groupedOrders[id] = {
-                        id: Utils.escapeHTML(row['ID'] || '-'),
-                        platform: Utils.escapeHTML(row['Platform'] || '-'),
-                        pembeli: Utils.escapeHTML(row['Nama Pembeli'] || 'Tanpa Nama'),
+                        id: Utils.escapeHTML(idRaw || '-'),
+                        platform: Utils.escapeHTML(Utils.getVal(row, 7, ['Platform', 'Toko']) || '-'),
+                        pembeli: Utils.escapeHTML(Utils.getVal(row, 8, ['Nama Pembeli', 'Username', 'Pembeli']) || 'Tanpa Nama'),
                         statusText: statusText,
                         isTerkirim: isTerkirim,
                         isBatal: isBatal,
-                        waktuInput: rawDate, 
+                        waktuInput: String(rawDateVal), 
                         items: [],
                         totalOrderQty: 0
                     };
@@ -675,9 +712,9 @@ const UI = {
                 }
 
                 groupedOrders[id].items.push({
-                    produk: Utils.escapeHTML(row['Nama Produk'] || '-'),
-                    warna: Utils.escapeHTML(row['Warna'] || '-'),
-                    ukuran: Utils.escapeHTML(row['Ukuran'] || '-'),
+                    produk: Utils.escapeHTML(Utils.getVal(row, 2, ['Nama Produk', 'Produk']) || '-'),
+                    warna: Utils.escapeHTML(Utils.getVal(row, 3, ['Warna', 'Varian']) || '-'),
+                    ukuran: Utils.escapeHTML(Utils.getVal(row, 4, ['Ukuran', 'Size']) || '-'),
                     qty: qty
                 });
                 
@@ -721,7 +758,6 @@ const UI = {
             }
             
             const isConfirmed = confirmedOrders.includes(order.id);
-            // Pesanan batal tidak butuh tombol konfirmasi
             const confirmBtnHTML = (isConfirmed || order.isBatal) ? '' : `<button type="button" class="btn-confirm" onclick="UI.confirmOrder('${order.id}', this)">✅ Konfirmasi</button>`;
             
             let cardClasses = 'order-card';
@@ -794,19 +830,20 @@ const UI = {
         let totalSemuaQty = 0;
 
         State.allData.forEach(row => {
-            if (!row['Tanggal']) return;
-            const rawDate = String(row['Tanggal']).replace(/^'/, ''); 
-            const rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
+            const rawDateVal = Utils.getVal(row, 0, ['Tanggal', 'Date', 'Waktu']);
+            const rowDate = Utils.normalizeDate(rawDateVal);
             
             if (rowDate === State.selectedDate) {
-                // Lewati pesanan batal dari rekap!
-                const status = (row['Status'] || '').toLowerCase();
+                const statusVal = Utils.getVal(row, 6, ['Status', 'Status Pesanan']);
+                const status = String(statusVal).toLowerCase();
+                
                 if (status.includes('batal') || status.includes('cancel')) return;
 
-                const produk = Utils.escapeHTML(row['Nama Produk'] || '-');
-                const warna = Utils.escapeHTML(row['Warna'] || '-');
-                const ukuran = Utils.escapeHTML(row['Ukuran'] || '-');
-                const qty = parseInt(row['Quantity']) || 0;
+                const produk = Utils.escapeHTML(Utils.getVal(row, 2, ['Nama Produk', 'Produk']) || '-');
+                const warna = Utils.escapeHTML(Utils.getVal(row, 3, ['Warna', 'Varian']) || '-');
+                const ukuran = Utils.escapeHTML(Utils.getVal(row, 4, ['Ukuran', 'Size']) || '-');
+                const qtyVal = Utils.getVal(row, 5, ['Quantity', 'Qty', 'Jumlah']);
+                const qty = parseInt(qtyVal) || 0;
                 
                 const key = `${produk}_${warna}_${ukuran}`;
                 
