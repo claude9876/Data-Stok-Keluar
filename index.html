@@ -692,8 +692,17 @@ const UI = {
                 if (isBatal) statusText = 'batal';
                 else if (isTerkirim) statusText = 'terkirim';
                 
-                if (!isBatal) {
-                    totalQty += qty; 
+                // Dihitung per QUANTITY baris (bukan per jumlah order/resi),
+                // supaya Perlu Dikirim + Dikirim selalu = Total Produk Terjual,
+                // walau ada resi yang isinya lebih dari 1 varian/warna.
+                if (isBatal) {
+                    countBatal += qty;
+                } else if (isTerkirim) {
+                    countTerkirim += qty;
+                    totalQty += qty;
+                } else {
+                    countMasuk += qty;
+                    totalQty += qty;
                 }
                 
                 if (!groupedOrders[id]) {
@@ -725,10 +734,6 @@ const UI = {
         const sortedOrders = orderedIds.map(id => groupedOrders[id]);
 
         sortedOrders.forEach(order => {
-            if (order.isBatal) countBatal++;
-            else if (order.isTerkirim) countTerkirim++;
-            else countMasuk++;
-
             let badgeStatus = '';
             if (order.isBatal) {
                 badgeStatus = `<span class="badge badge-danger">Dibatalkan</span>`;
