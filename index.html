@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Penyesuaian Viewport untuk Android agar tidak zoom otomatis saat input data -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sistem Manajemen Pesanan Fashion</title>
 
     <link rel="manifest" href="manifest.json">
@@ -39,7 +40,8 @@
         
         body { 
             background-color: var(--bg-body); color: var(--text-main); margin: 0; 
-            padding: 0 0 90px 0; line-height: 1.5; -webkit-font-smoothing: antialiased; 
+            /* Padding bawah diperbesar agar konten paling bawah tidak tertutup menu */
+            padding: 0 0 110px 0; line-height: 1.5; -webkit-font-smoothing: antialiased; 
         }
         
         .container { 
@@ -96,9 +98,33 @@
         .order-card { 
             border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; 
             background: #fff; box-shadow: var(--shadow-sm);
-            display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; flex-direction: column; gap: 16px; transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
         }
         .order-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+        /* --- STYLING PESANAN BELUM DIKONFIRMASI --- */
+        .order-card.unconfirmed {
+            background-color: rgba(245, 158, 11, 0.08); /* Opacity orange tipis */
+            border-color: #fbd38d;
+        }
+        .btn-confirm {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+        }
+        .btn-confirm:hover {
+            background: #d97706;
+            transform: translateY(-1px);
+        }
         
         .order-card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 4px; gap: 16px; flex-wrap: wrap;}
         .buyer-info { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 200px;}
@@ -110,7 +136,7 @@
         .badge-warning { background: #fef3c7; color: #b45309; }
         .badge-success { background: #d1fae5; color: #047857; }
         
-        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end;}
         .btn-download { background: #f8fafc; border: 1px solid var(--border); cursor: pointer; font-size: 18px; padding: 6px 10px; border-radius: 8px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; }
         .btn-download:hover { background: #eff6ff; border-color: #bfdbfe; color: var(--primary); }
 
@@ -173,7 +199,7 @@
         .btn-remove { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
         .btn-remove:hover { background: #fee2e2; border-color: #fca5a5; }
 
-        /* --- 6. TOAST & BOTTOM NAV --- */
+        /* --- 6. TOAST & BOTTOM NAV UNTUK ANDROID --- */
         #toast-container { position: fixed; top: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
         .toast { padding: 16px 24px; border-radius: 12px; color: white; font-weight: 600; box-shadow: var(--shadow-lg); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); font-size: 14px; }
         .toast.success { background-color: var(--success); }
@@ -181,18 +207,30 @@
         @keyframes slideIn { from { transform: translateX(100%) scale(0.95); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
 
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg-surface);
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.06); display: flex; z-index: 1000;
-            padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--border);
+            position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: var(--bg-surface);
+            box-shadow: 0 -8px 24px rgba(0,0,0,0.08); display: flex; z-index: 1000;
+            /* Kombinasi env dan fallback untuk Android gesture bar */
+            padding-bottom: calc(env(safe-area-inset-bottom) + 8px); 
+            border-top: 1px solid var(--border);
         }
         .nav-item {
-            flex: 1; padding: 16px 0; background: none; border: none; font-size: 12px; font-weight: 600;
-            color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: all 0.2s ease;
+            flex: 1; padding: 12px 0 14px 0; background: transparent; border: none; 
+            border-top: 3px solid transparent; /* Border transparan agar tinggi tombol konsisten (tidak loncat) */
+            font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; 
+            display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent; /* Hilangkan kotak biru klik bawaan Android */
+            outline: none;
         }
-        .nav-item span { font-size: 22px; transition: transform 0.2s; }
-        .nav-item:hover { color: var(--primary); background: #f8fafc; }
+        .nav-item span { font-size: 24px; transition: transform 0.2s; }
+        .nav-item:hover { color: var(--primary); }
         .nav-item:hover span { transform: translateY(-2px); }
-        .nav-item.active { color: var(--primary); background: #eff6ff; border-top: 3px solid var(--primary); }
+        
+        /* Modifikasi style active agar lebih smooth di Android */
+        .nav-item.active { 
+            color: var(--primary); 
+            border-top: 3px solid var(--primary); 
+            background: linear-gradient(180deg, #eff6ff 0%, transparent 100%); 
+        }
     </style>
 </head>
 <body>
@@ -367,7 +405,6 @@
     <button type="button" class="nav-item active" id="nav-dashboard">
         <span>📊</span> Dashboard
     </button>
-    <!-- TOMBOL REKAP PRODUK BARU -->
     <button type="button" class="nav-item" id="nav-rekap">
         <span>📦</span> Rekap Produk
     </button>
@@ -456,7 +493,7 @@ const API = {
         if (cachedData) {
             State.allData = JSON.parse(cachedData);
             UI.renderDashboard();
-            UI.renderRekap(); // Update view rekap
+            UI.renderRekap();
         }
 
         if (State.isSyncing) return;
@@ -478,7 +515,7 @@ const API = {
             localStorage.setItem(Config.CACHE_KEY, JSON.stringify(State.allData));
             UI.updateSyncStatus('success');
             UI.renderDashboard();
-            UI.renderRekap(); // Update view rekap setelah sinkronisasi
+            UI.renderRekap();
         } catch (error) {
             UI.updateSyncStatus('error', error.message);
         } finally {
@@ -509,7 +546,6 @@ const UI = {
         document.getElementById('nav-rekap').addEventListener('click', () => this.switchPage('rekap'));
         document.getElementById('nav-input').addEventListener('click', () => this.switchPage('input'));
         
-        // Filter Tanggal di Dashboard (Sinkronisasi dengan Rekap)
         document.getElementById('filterTanggal').addEventListener('change', (e) => {
             State.selectedDate = e.target.value;
             document.getElementById('filterTanggalRekap').value = State.selectedDate; 
@@ -517,7 +553,6 @@ const UI = {
             this.renderRekap();
         });
         
-        // Filter Tanggal di Rekap (Sinkronisasi dengan Dashboard)
         document.getElementById('filterTanggalRekap').addEventListener('change', (e) => {
             State.selectedDate = e.target.value;
             document.getElementById('filterTanggal').value = State.selectedDate; 
@@ -586,6 +621,21 @@ const UI = {
             container.classList.add('offline');
         }
     },
+    
+    confirmOrder(orderId, btnElement) {
+        let confirmedOrders = JSON.parse(localStorage.getItem('confirmed_orders') || '[]');
+        if (!confirmedOrders.includes(orderId)) {
+            confirmedOrders.push(orderId);
+            localStorage.setItem('confirmed_orders', JSON.stringify(confirmedOrders));
+        }
+        
+        const card = btnElement.closest('.order-card');
+        if (card) {
+            card.classList.remove('unconfirmed');
+        }
+        btnElement.remove();
+        this.showToast('Pesanan berhasil dikonfirmasi', 'success');
+    },
 
     renderDashboard() {
         let totalQty = 0;
@@ -594,11 +644,20 @@ const UI = {
         let listHTML = '';
 
         const groupedOrders = {};
-        const orderedIds = []; // Menggunakan Array untuk melacak urutan ASLI dari spreadsheet[span_0](start_span)[span_0](end_span)
+        const orderedIds = []; 
+        
+        let confirmedOrders = JSON.parse(localStorage.getItem('confirmed_orders'));
+        if (!confirmedOrders) {
+            confirmedOrders = [];
+            State.allData.forEach(row => {
+                const id = row['ID'] || JSON.stringify(row);
+                if (!confirmedOrders.includes(id)) confirmedOrders.push(id);
+            });
+            localStorage.setItem('confirmed_orders', JSON.stringify(confirmedOrders));
+        }
 
         State.allData.forEach(row => {
             if (!row['Tanggal']) return;
-            // Hapus kutip tunggal jika ada dari fix sistem sebelumnya
             const rawDate = String(row['Tanggal']).replace(/^'/, ''); 
             const rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
             
@@ -621,7 +680,7 @@ const UI = {
                         items: [],
                         totalOrderQty: 0
                     };
-                    orderedIds.push(id); // Simpan ID agar urutannya sama persis seperti di Sheet[span_1](start_span)[span_1](end_span)
+                    orderedIds.push(id);
                 }
 
                 groupedOrders[id].items.push({
@@ -635,7 +694,6 @@ const UI = {
             }
         });
 
-        // Menggunakan urutan asli (orderedIds) tanpa fungsi .sort() tambahan[span_2](start_span)[span_2](end_span)
         const sortedOrders = orderedIds.map(id => groupedOrders[id]);
 
         sortedOrders.forEach(order => {
@@ -646,20 +704,17 @@ const UI = {
                 ? `<span class="badge badge-success">Dikirim</span>` 
                 : `<span class="badge badge-warning">Perlu Dikirim</span>`;
             
-            // Format Tanggal dan Jam (Pengecekan Data Lama/Baru)
             let formattedTime = "";
             const hasTime = order.waktuInput.includes('T') || order.waktuInput.includes(':');
             const d = new Date(order.waktuInput);
             
             if (!isNaN(d)) {
                 if (hasTime) {
-                    // Data Baru: Memiliki jam yang valid
                     formattedTime = d.toLocaleString('id-ID', {
                         day: '2-digit', month: 'short', year: 'numeric',
                         hour: '2-digit', minute: '2-digit'
                     });
                 } else {
-                    // Data Lama: Tidak ada info jam dari server
                     formattedTime = d.toLocaleString('id-ID', {
                         day: '2-digit', month: 'short', year: 'numeric'
                     }); 
@@ -668,6 +723,10 @@ const UI = {
                 formattedTime = order.waktuInput;
             }
             
+            const isConfirmed = confirmedOrders.includes(order.id);
+            const unconfirmedClass = isConfirmed ? '' : ' unconfirmed';
+            const confirmBtnHTML = isConfirmed ? '' : `<button type="button" class="btn-confirm" onclick="UI.confirmOrder('${order.id}', this)">✅ Konfirmasi</button>`;
+
             let itemsHTML = '';
             order.items.forEach(item => {
                 const imgURL = Utils.getProductImage(item.produk, item.warna); 
@@ -684,7 +743,7 @@ const UI = {
             });
 
             listHTML += `
-            <div class="order-card" data-status="${order.statusText}">
+            <div class="order-card${unconfirmedClass}" data-status="${order.statusText}">
                 <div class="order-card-header">
                     <div class="buyer-info">
                         <div class="resi-title">
@@ -700,6 +759,7 @@ const UI = {
                         </div>
                     </div>
                     <div class="header-actions">
+                        ${confirmBtnHTML}
                         ${badgeStatus}
                         <button type="button" class="btn-download" onclick="UI.downloadCard('${order.id}', this)" title="Unduh Gambar Pesanan">📥</button>
                     </div>
@@ -727,12 +787,10 @@ const UI = {
         this.filterCards(document.getElementById('searchInput').value); 
     },
 
-    // --- FUNGSI BARU: RENDER REKAP PRODUK ---
     renderRekap() {
         const groupedRekap = {};
         let totalSemuaQty = 0;
 
-        // Kumpulkan dan gabungkan jumlah barang berdasarkan Produk + Warna + Ukuran[span_3](start_span)[span_3](end_span)
         State.allData.forEach(row => {
             if (!row['Tanggal']) return;
             const rawDate = String(row['Tanggal']).replace(/^'/, ''); 
@@ -744,7 +802,6 @@ const UI = {
                 const ukuran = Utils.escapeHTML(row['Ukuran'] || '-');
                 const qty = parseInt(row['Quantity']) || 0;
                 
-                // Kunci unik untuk menggabungkan varian yang persis sama
                 const key = `${produk}_${warna}_${ukuran}`;
                 
                 if (!groupedRekap[key]) {
@@ -756,12 +813,11 @@ const UI = {
             }
         });
 
-        // Urutkan alfabetis berdasarkan Nama Produk
         const sortedRekap = Object.values(groupedRekap).sort((a, b) => a.produk.localeCompare(b.produk));
         
         let rekapHTML = '';
         sortedRekap.forEach(item => {
-            const imgURL = Utils.getProductImage(item.produk, item.warna); // Gambar otomatis[span_4](start_span)[span_4](end_span)
+            const imgURL = Utils.getProductImage(item.produk, item.warna); 
             
             rekapHTML += `
             <div class="rekap-card">
@@ -777,7 +833,6 @@ const UI = {
         if (!rekapHTML) {
             rekapHTML = `<div class="empty-state">Belum ada barang yang terjual untuk direkap pada tanggal ini.</div>`;
         } else {
-            // Tambahkan total keseluruhan di bagian atas list
             rekapHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius); margin-bottom: 20px;">
                     <span style="font-weight: 700; color: var(--primary-hover); font-size: 15px;">Total Keseluruhan Barang:</span>
@@ -828,6 +883,9 @@ const UI = {
         const originalDisplay = btnElement.style.display;
         btnElement.style.display = 'none';
         
+        const confirmBtn = card.querySelector('.btn-confirm');
+        if (confirmBtn) confirmBtn.style.display = 'none';
+        
         this.showToast('Memproses gambar...', 'success');
 
         try {
@@ -837,7 +895,7 @@ const UI = {
 
             const canvas = await html2canvas(card, {
                 scale: 2, 
-                backgroundColor: '#ffffff',
+                backgroundColor: card.classList.contains('unconfirmed') ? '#fef3c7' : '#ffffff',
                 useCORS: true 
             });
 
@@ -851,6 +909,7 @@ const UI = {
             this.showToast('Gagal mengunduh gambar', 'error');
         } finally {
             btnElement.style.display = originalDisplay;
+            if (confirmBtn) confirmBtn.style.display = 'inline-flex';
         }
     },
 
@@ -926,7 +985,6 @@ const UI = {
         const btn = document.getElementById('btnSubmitFinal');
         const btnAdd = document.getElementById('btnAddToCart');
         
-        // Memaksa pengiriman dengan tanda kutip tunggal (') agar Google Sheets tidak memotong jamnya
         const inputDate = document.getElementById('input_tanggal').value;
         const now = new Date();
         const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
