@@ -552,10 +552,12 @@ const UI = {
         let listHTML = '';
 
         const groupedOrders = {};
+        const orderedIds = []; // Menggunakan Array untuk melacak urutan ASLI dari spreadsheet
 
         State.allData.forEach(row => {
             if (!row['Tanggal']) return;
-            const rawDate = String(row['Tanggal']);
+            // Hapus kutip tunggal jika ada dari fix sistem sebelumnya
+            const rawDate = String(row['Tanggal']).replace(/^'/, ''); 
             const rowDate = rawDate.includes('T') ? rawDate.split('T')[0] : rawDate.split(' ')[0];
             
             if (rowDate === State.selectedDate) {
@@ -570,12 +572,14 @@ const UI = {
                     groupedOrders[id] = {
                         id: Utils.escapeHTML(row['ID'] || '-'),
                         platform: Utils.escapeHTML(row['Platform'] || '-'),
-                        pembeli: Utils.escapeHTML(row['Nama Pembeli'] || 'Tanpa Nama'), // Memisahkan Resi & Nama
+                        pembeli: Utils.escapeHTML(row['Nama Pembeli'] || 'Tanpa Nama'),
                         statusText: isTerkirim ? 'terkirim' : 'masuk',
                         isTerkirim: isTerkirim,
+                        waktuInput: rawDate, 
                         items: [],
                         totalOrderQty: 0
                     };
+                    orderedIds.push(id); // Simpan ID agar urutannya sama persis seperti di Sheet
                 }
 
                 groupedOrders[id].items.push({
@@ -589,13 +593,38 @@ const UI = {
             }
         });
 
-        Object.values(groupedOrders).forEach(order => {
+        // Menggunakan urutan asli (orderedIds) tanpa fungsi .sort() tambahan
+        const sortedOrders = orderedIds.map(id => groupedOrders[id]);
+
+        sortedOrders.forEach(order => {
             if (order.isTerkirim) countTerkirim++;
             else countMasuk++;
 
             let badgeStatus = order.isTerkirim 
                 ? `<span class="badge badge-success">Dikirim</span>` 
                 : `<span class="badge badge-warning">Perlu Dikirim</span>`;
+            
+            // Format Tanggal dan Jam (Pengecekan Data Lama/Baru)
+            let formattedTime = "";
+            const hasTime = order.waktuInput.includes('T') || order.waktuInput.includes(':');
+            const d = new Date(order.waktuInput);
+            
+            if (!isNaN(d)) {
+                if (hasTime) {
+                    // Data Baru: Memiliki jam yang valid
+                    formattedTime = d.toLocaleString('id-ID', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                } else {
+                    // Data Lama: Tidak ada info jam dari server
+                    formattedTime = d.toLocaleString('id-ID', {
+                        day: '2-digit', month: 'short', year: 'numeric'
+                    }); 
+                }
+            } else {
+                formattedTime = order.waktuInput;
+            }
             
             let itemsHTML = '';
             order.items.forEach(item => {
@@ -612,7 +641,6 @@ const UI = {
                 </div>`;
             });
 
-            // Menerapkan UI Baru dengan jarak presisi
             listHTML += `
             <div class="order-card" data-status="${order.statusText}">
                 <div class="order-card-header">
@@ -624,6 +652,9 @@ const UI = {
                         <div class="buyer-name">
                             <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                             ${order.pembeli}
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; margin-top: 4px; font-weight: 500;">
+                            🕒 ${hasTime ? 'Diinput pada: ' : 'Tanggal: '} ${formattedTime}
                         </div>
                     </div>
                     <div class="header-actions">
@@ -784,19 +815,20 @@ const UI = {
         totalLabel.innerText = totalPcs;
     },
 
-    removeFromCart(index) {
-        State.cart.splice(index, 1);
-        this.renderCartUI();
-    },
-
     async submitFinalOrder() {
         if(State.cart.length === 0) return;
 
         const btn = document.getElementById('btnSubmitFinal');
         const btnAdd = document.getElementById('btnAddToCart');
         
+        // Memaksa pengiriman dengan tanda kutip tunggal (') agar Google Sheets tidak memotong jamnya
+        const inputDate = document.getElementById('input_tanggal').value;
+        const now = new Date();
+        const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        const datetimeVal = `'${inputDate}T${timeString}`; 
+
         const commonData = {
-            tanggal: document.getElementById('input_tanggal').value,
+            tanggal: datetimeVal,
             id: document.getElementById('id_pesanan').value.trim(),
             status: document.getElementById('status').value,
             platform: document.getElementById('platform').value,
