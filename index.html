@@ -5,9 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sistem Manajemen Pesanan - Jiyora Wear</title>
     <link rel="manifest" href="./manifest.json">
+    
+    <!-- Pustaka Tambahan -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <!-- Pustaka Scanner Barcode Kamera & Galeri -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
@@ -22,7 +28,7 @@
 
         body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; overscroll-behavior-y: none;}
         
-        /* Layout Dasar HTML5 */
+        /* Layout Dasar */
         .app-container { display: flex; height: 100vh; overflow: hidden; }
         aside.sidebar { width: 260px; background-color: var(--bg-surface); border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 20; box-shadow: 2px 0 10px rgba(0,0,0,0.02);}
         main.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;}
@@ -35,17 +41,15 @@
         .nav-item.active { background-color: #fff1f0; color: var(--primary); font-weight: 600;}
         .nav-item i { width: 24px; font-size: 1.1em; }
         
-        /* Animasi Transisi View */
         .fade-in { animation: fadeIn 0.3s ease-in-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Modern Menu Cards (Dashboard) */
+        /* Menu Cards */
         .menu-card { background: var(--bg-surface); border-radius: 16px; border: 1px solid #e2e8f0; padding: 20px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .menu-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.1); border-color: #cbd5e1;}
         .menu-card:active { transform: scale(0.97); }
         .menu-card::after { content: ''; position: absolute; right: -20px; top: -20px; width: 80px; height: 80px; border-radius: 50%; opacity: 0.1; transition: 0.3s;}
         .menu-card:hover::after { transform: scale(1.2); }
-        
         .mc-blue::after { background: #3b82f6; }
         .mc-orange::after { background: var(--primary); }
         .mc-green::after { background: #10b981; }
@@ -56,7 +60,6 @@
         .menu-title { font-size: 0.875rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
         .menu-count { font-size: 2rem; font-weight: 800; color: var(--text-main); margin-top: 4px; line-height: 1.2;}
 
-        /* Modern Table Card */
         .table-card { background: var(--bg-surface); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column;}
         
         /* Buttons & Inputs */
@@ -66,10 +69,10 @@
         .btn-outline:hover { background-color: #f8fafc; border-color: #94a3b8;}
         .btn-back { background: transparent; border: none; color: var(--text-muted); font-weight: 600; font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; transition: 0.2s; margin-left: -12px;}
         .btn-back:hover { background: #e2e8f0; color: var(--text-main); }
+        
         .input-field { width: 100%; padding: 12px 16px; border: 1.5px solid #e2e8f0; border-radius: 10px; outline: none; font-size: 14px; transition: 0.2s; background-color: #f8fafc; font-weight: 500;}
         .input-field:focus { border-color: var(--primary); background-color: #ffffff; box-shadow: 0 0 0 4px rgba(238, 77, 45, 0.1); }
         
-        /* Table */
         .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 650px; }
         th { background-color: #f8fafc; color: var(--text-muted); font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 16px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
@@ -77,13 +80,17 @@
         tr:last-child td { border-bottom: none; }
         tr:hover td { background-color: #fcfcfc; }
         
-        /* Modal & Dialogs */
+        /* Modal General */
         .modal-backdrop { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 50; align-items: center; justify-content: center; }
         .modal-card { background: white; border-radius: 20px; width: 650px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border: 1px solid #f1f5f9;}
         .modal-header { padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 20px 20px 0 0;}
         .modal-body { padding: 24px; overflow-y: auto; }
         .modal-footer { padding: 20px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 20px 20px;}
-        #syncToast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); z-index: 100;}
+        
+        /* SCANNER APP UI (Dark Mode) */
+        #scannerAppOverlay { display: none; position: fixed; inset: 0; background-color: #121212; z-index: 100; flex-direction: column; color: white;}
+        #reader { width: 100%; height: 100%; border: none; }
+        #reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; }
         
         /* Badges */
         .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px;}
@@ -94,7 +101,9 @@
         .badge-gray { background: #f1f5f9; color: #475569; }
         .badge-today { background: #ffe4e6; color: #e11d48; font-size: 9px; padding: 2px 6px; border: 1px solid #fecdd3; border-radius: 4px;}
         
-        /* Bottom Nav HTML5 */
+        #syncToast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 600; display: none; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); z-index: 100;}
+        
+        /* Bottom Nav */
         nav.bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; z-index: 40; justify-content: space-around; align-items: center; padding: 8px 0; padding-bottom: env(safe-area-inset-bottom, 8px); box-shadow: 0 -4px 20px rgba(0,0,0,0.05);}
         .bnav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 11px; font-weight: 600; width: 33%; gap: 6px; padding: 4px 0; cursor: pointer; transition: 0.2s;}
         .bnav-item i { font-size: 20px; }
@@ -206,7 +215,6 @@
 
             <!-- SECTION 2: DEDICATED LIST VIEW -->
             <section id="view-order-list" class="hidden flex-col h-full fade-in">
-                
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
                         <button onclick="goBackToDashboard()" class="btn-back mb-1">
@@ -236,7 +244,7 @@
                                     <th width="30%">Info Pembeli</th>
                                     <th width="40%">Produk & Qty</th>
                                     <th width="15%">Status</th>
-                                    <th width="15%">Pengiriman</th>
+                                    <th width="15%">Pengiriman & Barcode</th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody">
@@ -300,17 +308,27 @@
     </nav>
 </div>
 
-<!-- Modal Input -->
+<!-- Modal Input Manual -->
 <div id="inputModal" class="modal-backdrop">
     <div class="modal-card">
         <header class="modal-header">
-            <h3 class="text-lg font-bold text-gray-800">Input Manual / Scanner</h3>
+            <h3 class="text-lg font-bold text-gray-800">Input Pesanan Manual</h3>
             <button onclick="closeModal()" class="text-gray-400 hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition"><i class="fas fa-times text-lg"></i></button>
         </header>
         <section class="modal-body">
             <form id="manualOrderForm">
                 <div class="grid grid-cols-2 gap-5">
-                    <div class="form-group col-span-2"><label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">No. Pesanan / Resi *</label><input type="text" id="m_no_pesanan" class="input-field" placeholder="Ketik/Scan barcode resi..."></div>
+                    <!-- Modifikasi Input Resi dengan Tombol Scan Internal/App -->
+                    <div class="form-group col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">No. Pesanan / Resi *</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="m_no_pesanan" class="input-field flex-1" placeholder="Ketik manual atau Scan..." autofocus>
+                            <button type="button" onclick="openScannerApp()" class="bg-gray-800 hover:bg-black text-white px-4 rounded-lg flex items-center justify-center transition shadow-sm" title="Scan Barcode / Resi">
+                                <i class="fas fa-qrcode text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div class="form-group col-span-2"><label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Nama Produk *</label><input type="text" id="m_nama_produk" class="input-field" required placeholder="Cth: Kemeja Nara"></div>
                     <div class="form-group"><label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Variasi</label><input type="text" id="m_variasi" class="input-field" placeholder="Cth: Hitam, XL"></div>
                     <div class="form-group"><label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Qty *</label><input type="number" id="m_qty" class="input-field" required value="1" min="1"></div>
@@ -327,12 +345,59 @@
     </div>
 </div>
 
+<!-- ======================= -->
+<!-- MODAL SCANNER APP (NEW) -->
+<!-- ======================= -->
+<div id="scannerAppOverlay">
+    <!-- Header Back -->
+    <header class="p-5 flex items-center gap-4 z-10 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full">
+        <button onclick="closeScannerApp()" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition">
+            <i class="fas fa-chevron-left text-xl"></i>
+        </button>
+        <span class="font-bold text-lg tracking-wide">Scan Resi</span>
+    </header>
+    
+    <!-- Viewfinder Kamera -->
+    <div class="flex-1 relative flex items-center justify-center overflow-hidden">
+        <div id="reader"></div>
+        <!-- Kotak Bantuan Visual (Area Fokus) -->
+        <div class="absolute w-[250px] h-[150px] border-2 border-[var(--primary)] rounded-lg shadow-[0_0_0_4000px_rgba(0,0,0,0.5)] z-0 pointer-events-none box-border flex items-center justify-center">
+             <!-- Corner accents -->
+             <div class="absolute top-[-2px] left-[-2px] w-6 h-6 border-t-4 border-l-4 border-white rounded-tl"></div>
+             <div class="absolute top-[-2px] right-[-2px] w-6 h-6 border-t-4 border-r-4 border-white rounded-tr"></div>
+             <div class="absolute bottom-[-2px] left-[-2px] w-6 h-6 border-b-4 border-l-4 border-white rounded-bl"></div>
+             <div class="absolute bottom-[-2px] right-[-2px] w-6 h-6 border-b-4 border-r-4 border-white rounded-br"></div>
+             <p class="text-white/50 text-xs mt-24">Arahkan Barcode Kesini</p>
+        </div>
+    </div>
+
+    <!-- Footer Controls (Galeri) -->
+    <footer class="p-6 pb-12 flex justify-around items-center bg-black z-10">
+        <!-- Input File Hidden -->
+        <input type="file" id="qr-input-file" accept="image/*" class="hidden">
+        
+        <!-- Tombol Buka Galeri -->
+        <label for="qr-input-file" class="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition">
+            <div class="w-14 h-14 rounded-full bg-[#1f1f1f] border border-gray-600 flex items-center justify-center">
+                <i class="fas fa-image text-2xl text-white"></i>
+            </div>
+            <span class="text-xs font-medium text-gray-300">Galeri</span>
+        </label>
+    </footer>
+</div>
+
 <div id="syncToast"><i class="fas fa-spinner fa-spin"></i> Memuat data...</div>
+
+<!-- Audio Suara Beep Sukses Scan -->
+<audio id="scanBeep" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
 
 <script>
     let allOrders = [];
     let currentCategory = 'Semua';
     let currentRole = 'umum';
+    
+    // Variabel Global untuk Scanner
+    let html5QrCode; 
     
     // --- MASUKKAN URL GOOGLE SHEETS ANDA DISINI ---
     const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyUOkCIJFXL6ImObIuKpCLs2nTFOtx-XZVA16RxXLaPFkx6fxZs294VpTopWwrw4LNU/exec';
@@ -503,17 +568,90 @@
             updateDashboardStats();
             syncToGoogleSheets(processed); 
             
-            alert(`Berhasil impor ${processed.length} pesanan baru ke sistem.`);
+            alert(`Berhasil impor ${processed.length} baris pesanan baru.`);
             document.getElementById('fileUpload').value = '';
         };
         reader.readAsArrayBuffer(file);
     }
 
+    // ==========================================
+    // FUNGSI SCANNER BARCODE (KAMERA & GALERI)
+    // ==========================================
+    
+    function openScannerApp() {
+        document.getElementById('scannerAppOverlay').style.display = 'flex';
+        
+        // Inisialisasi Pustaka
+        if(!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+
+        // Mulai kamera belakang
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 150 } }, // Menggunakan frame persegi panjang untuk resi
+            (decodedText, decodedResult) => {
+                // Berhasil scan dari kamera
+                handleScanSuccess(decodedText);
+            },
+            (errorMessage) => {
+                // Terjadi error/belum nemu barcode, biarkan saja jalan terus
+            }
+        ).catch(err => {
+            alert("Maaf, gagal mengakses kamera perangkat. Pastikan izin kamera telah diberikan.");
+            closeScannerApp();
+        });
+    }
+
+    function closeScannerApp() {
+        document.getElementById('scannerAppOverlay').style.display = 'none';
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => {
+                html5QrCode.clear();
+            }).catch(err => {
+                console.log("Error stopping scanner", err);
+            });
+        }
+    }
+
+    // Event saat pengguna memilih foto dari Galeri
+    document.getElementById('qr-input-file').addEventListener('change', e => {
+        if (e.target.files.length == 0) return;
+        
+        const imageFile = e.target.files[0];
+        if(!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
+        
+        // Scan dari File Foto yang diupload
+        html5QrCode.scanFile(imageFile, true)
+            .then(decodedText => {
+                handleScanSuccess(decodedText);
+            })
+            .catch(err => {
+                alert("Barcode tidak ditemukan pada foto ini. Pastikan foto resi jelas dan tidak blur.");
+            });
+            
+        // Kosongkan kembali input file
+        e.target.value = '';
+    });
+
+    function handleScanSuccess(text) {
+        // Bunyikan Beep saat sukses (Opsional)
+        document.getElementById('scanBeep').play().catch(e => console.log('Autoplay audio diblokir browser.'));
+        
+        // Masukkan Hasil Scan ke form dan matikan kamera
+        document.getElementById('m_no_pesanan').value = text;
+        closeScannerApp();
+        
+        // Pindah kursor fokus ke kolom nama produk agar lebih cepat
+        document.getElementById('m_nama_produk').focus();
+    }
+    // ==========================================
+
     function openModal() {
-        const rnd = Math.floor(1000 + Math.random() * 9000);
-        document.getElementById('m_no_pesanan').value = `MAN-${rnd}`;
+        const inputField = document.getElementById('m_no_pesanan');
+        inputField.value = ``;
         document.getElementById('inputModal').style.display = 'flex';
-        setTimeout(() => document.getElementById('m_no_pesanan').select(), 300);
+        setTimeout(() => inputField.focus(), 300);
     }
 
     function closeModal() { 
@@ -529,15 +667,18 @@
         const hh = now.getHours().toString().padStart(2, '0');
         const min = now.getMinutes().toString().padStart(2, '0');
         const formattedDate = `${yyyy}-${mm}-${dd} ${hh}:${min}`; 
+        
+        let nomorScan = document.getElementById('m_no_pesanan').value;
+        if(!nomorScan) { nomorScan = `MAN-${Math.floor(1000 + Math.random() * 9000)}`; }
 
         const orderData = {
-            id: document.getElementById('m_no_pesanan').value,
+            id: nomorScan,
             productName: document.getElementById('m_nama_produk').value,
             variation: document.getElementById('m_variasi').value,
             qty: document.getElementById('m_qty').value,
             status: document.getElementById('m_status').value,
             courier: document.getElementById('m_ekspedisi').value,
-            resi: document.getElementById('m_no_pesanan').value, 
+            resi: nomorScan, // Resi disamakan
             buyerName: document.getElementById('m_penerima').value || 'Offline',
             orderDate: formattedDate,
             source: 'Manual'
@@ -556,15 +697,13 @@
         syncToGoogleSheets([orderData]); 
     }
 
-    // --- MENGHITUNG STATISTIK BERDASARKAN ID PESANAN (UNIK) ---
     function updateDashboardStats() {
-        // Fungsi untuk menghitung jumlah pesanan unik (menghindari duplikat jika 1 pesanan punya banyak produk)
         const getUniqueCount = (arr) => {
             let uniqueSet = new Set();
             let manualCounter = 0;
             arr.forEach(o => {
                 if(o.id && o.id !== '-' && o.id !== 'N/A') uniqueSet.add(o.id);
-                else manualCounter++; // Jika ID kosong, hitung terpisah
+                else manualCounter++; 
             });
             return uniqueSet.size + manualCounter;
         };
@@ -588,12 +727,10 @@
 
     document.getElementById('searchInput').addEventListener('input', function(e) { renderTable(e.target.value.toLowerCase()); });
 
-    // --- RENDER TABEL & GROUPING PESANAN GANDA (BUNDLE) ---
     function renderTable(searchTerm = '') {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         
-        // 1. Filter awal berdasarkan Kategori Menu & Kolom Pencarian
         let filteredOrders = allOrders.filter(order => {
             const st = order.status.toLowerCase();
             if (currentCategory !== 'Semua') {
@@ -606,36 +743,20 @@
             return true;
         });
 
-        // 2. Proses Penggabungan (Grouping) Berdasarkan No Pesanan
         let groupedOrders = {};
         filteredOrders.forEach(order => {
-            // Gunakan ID Pesanan sebagai Kunci Grup. Jika tidak ada, pakai resi.
             let key = (order.id && order.id !== '-' && order.id !== 'N/A') ? order.id : (order.resi && order.resi !== '-' ? order.resi : Math.random());
-            
             if (!groupedOrders[key]) {
-                // Jika belum ada di grup, buat entri baru
                 groupedOrders[key] = { ...order };
-                groupedOrders[key].productsList = [{
-                    name: order.productName,
-                    variation: order.variation,
-                    qty: parseInt(order.qty) || 1
-                }];
+                groupedOrders[key].productsList = [{ name: order.productName, variation: order.variation, qty: parseInt(order.qty) || 1 }];
                 groupedOrders[key].totalQty = parseInt(order.qty) || 1;
             } else {
-                // Jika sudah ada (pesanan sama), tambahkan produknya ke dalam daftar
-                groupedOrders[key].productsList.push({
-                    name: order.productName,
-                    variation: order.variation,
-                    qty: parseInt(order.qty) || 1
-                });
+                groupedOrders[key].productsList.push({ name: order.productName, variation: order.variation, qty: parseInt(order.qty) || 1 });
                 groupedOrders[key].totalQty += (parseInt(order.qty) || 1);
             }
         });
 
-        // 3. Ubah kembali objek grup menjadi array
         let finalGroupedOrders = Object.values(groupedOrders);
-
-        // Update teks jumlah paket di pojok kanan atas tabel
         document.getElementById('currentListCount').innerText = finalGroupedOrders.length;
 
         if (finalGroupedOrders.length === 0) {
@@ -643,14 +764,11 @@
              return;
         }
 
-        // 4. Proses merender HTML ke Tabel
         finalGroupedOrders.forEach(order => {
             const tr = document.createElement('tr');
-            
             const isToday = checkIsToday(order.orderDate) || order.source === 'Manual';
             const dateBadge = isToday ? `<span class="badge-today ml-1"><i class="fas fa-bolt"></i> Baru</span>` : '';
             
-            // Susun HTML untuk Produk (Bisa lebih dari 1)
             let productsHtml = order.productsList.map(p => `
                 <div class="mb-2 last:mb-0 border-b border-gray-100 last:border-0 pb-2 last:pb-0">
                     <div class="text-xs md:text-sm font-semibold text-gray-800 truncate w-40 md:w-56" title="${p.name}">${p.name}</div>
@@ -658,8 +776,13 @@
                 </div>
             `).join('');
 
-            // Tampilkan Label BUNDLE jika di dalam 1 pesanan ada lebih dari 1 macam/kuantitas barang
             let multiBadge = order.productsList.length > 1 ? `<div class="text-[9px] font-bold bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded inline-block mt-2 uppercase tracking-wider">📦 ${order.totalQty} Barang</div>` : '';
+
+            let resiBarcodeHtml = order.resi && order.resi !== '-' ? `
+                <div class="mt-2 bg-white p-2 rounded-lg border border-gray-200 inline-block shadow-sm">
+                    <svg class="barcode-resi" data-value="${order.resi}"></svg>
+                </div>
+            ` : `<div class="text-[10px] md:text-xs text-orange-400 mt-2 italic flex items-center gap-1"><i class="fas fa-exclamation-circle"></i> Menunggu Resi</div>`;
 
             tr.innerHTML = `
                 <td>
@@ -671,17 +794,28 @@
                     ${multiBadge}
                 </td>
                 <td class="align-top">
-                    <div class="flex flex-col">
-                        ${productsHtml}
-                    </div>
+                    <div class="flex flex-col">${productsHtml}</div>
                 </td>
                 <td>${getStatusBadge(order.status)}</td>
                 <td>
-                    <div class="text-xs md:text-sm font-bold text-gray-700 flex items-center gap-1.5"><i class="fas fa-truck text-gray-400 text-[10px]"></i> ${order.courier}</div>
-                    ${order.resi ? `<div class="text-[10px] md:text-xs font-mono bg-blue-50 text-blue-700 px-2 py-1 rounded inline-block mt-2 select-all border border-blue-100">${order.resi}</div>` : `<div class="text-[10px] md:text-xs text-orange-400 mt-2 italic flex items-center gap-1"><i class="fas fa-exclamation-circle"></i> Menunggu Resi</div>`}
+                    <div class="text-xs md:text-sm font-bold text-gray-700 flex items-center gap-1.5 mb-1"><i class="fas fa-truck text-gray-400 text-[10px]"></i> ${order.courier}</div>
+                    ${resiBarcodeHtml}
                 </td>
             `;
             tbody.appendChild(tr);
+        });
+
+        document.querySelectorAll('.barcode-resi').forEach(svg => {
+            JsBarcode(svg, svg.getAttribute('data-value'), {
+                format: "CODE128", 
+                width: 1.2,        
+                height: 40,        
+                displayValue: true, 
+                fontSize: 11,
+                fontOptions: "bold",
+                margin: 0,
+                lineColor: "#0f172a"
+            });
         });
     }
 </script>
