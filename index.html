@@ -31,6 +31,12 @@
         .nav-item.active { background-color: #fff1f0; color: var(--primary); }
         .nav-item i { width: 24px; font-size: 1.1em; }
         .card { background: var(--bg-surface); border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; overflow: hidden; }
+        
+        /* Modifikasi untuk Card Stat agar bisa di-klik */
+        .card-stat { cursor: pointer; transition: all 0.2s ease; }
+        .card-stat:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .card-stat:active { transform: scale(0.97); }
+
         .btn-primary { background-color: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 500; border: none; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(238, 77, 45, 0.2); display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
         .btn-primary:active { transform: scale(0.98); }
         .btn-outline { background-color: white; color: var(--text-main); border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; justify-content: center;}
@@ -126,16 +132,18 @@
             
             <!-- DASHBOARD UMUM -->
             <div id="view-umum" class="block">
+                
+                <!-- Kotak Statistik (BISA DIKLIK) -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 grid-stats">
-                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-blue-500 mb-0">
+                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-blue-500 mb-0 hover:bg-blue-50" onclick="triggerTab('Semua')">
                         <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl"><i class="fas fa-box"></i></div>
                         <div><div class="text-xs md:text-sm text-gray-500 font-medium">Total Pesanan</div><div class="text-xl md:text-2xl font-bold text-gray-800" id="stat-total">0</div></div>
                     </div>
-                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-[var(--primary)] mb-0">
+                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-[var(--primary)] mb-0 hover:bg-orange-50" onclick="triggerTab('Perlu Dikirim')">
                         <div class="w-12 h-12 rounded-full bg-orange-50 text-[var(--primary)] flex items-center justify-center text-xl"><i class="fas fa-truck-fast"></i></div>
                         <div><div class="text-xs md:text-sm text-gray-500 font-medium">Perlu Dikirim</div><div class="text-xl md:text-2xl font-bold text-gray-800" id="stat-toship">0</div></div>
                     </div>
-                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-green-500 mb-0">
+                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-green-500 mb-0 hover:bg-green-50" onclick="triggerTab('Selesai')">
                         <div class="w-12 h-12 rounded-full bg-green-50 text-green-500 flex items-center justify-center text-xl"><i class="fas fa-check-circle"></i></div>
                         <div><div class="text-xs md:text-sm text-gray-500 font-medium">Selesai</div><div class="text-xl md:text-2xl font-bold text-gray-800" id="stat-done">0</div></div>
                     </div>
@@ -254,7 +262,7 @@
     let currentRole = 'umum';
     
     // --- GANTI DENGAN URL GOOGLE SHEETS ANDA YANG BARU DISINI ---
-    const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyUOkCIJFXL6ImObIuKpCLs2nTFOtx-XZVA16RxXLaPFkx6fxZs294VpTopWwrw4LNU/exec';
+    const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec';
 
     // --- MENGAMBIL DATA DARI GOOGLE SHEETS KETIKA DIBUKA ---
     function loadFromGoogleSheets(isManual = false) {
@@ -262,12 +270,10 @@
         toast.style.display = 'flex';
         toast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengambil data dari server...';
         
-        // Membaca Data GET
         fetch(googleAppScriptUrl)
         .then(res => res.json())
         .then(res => {
             if(res.status === 'success') {
-                // Balikkan urutan agar pesanan paling bawah di Excel muncul di atas aplikasi
                 allOrders = res.data.reverse(); 
                 renderTable();
                 updateStats();
@@ -301,6 +307,16 @@
         const m = (today.getMonth() + 1).toString().padStart(2, '0');
         const y = today.getFullYear();
         return dateString.includes(`${y}-${m}-${d}`) || dateString.includes(`${d}-${m}-${y}`) || dateString.includes(`${d}/${m}/${y}`);
+    }
+
+    // --- FITUR KLIK KARTU STATISTIK (SHORTCUT) ---
+    function triggerTab(statusName) {
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(tab => {
+            if (tab.innerText.trim() === statusName) {
+                filterStatus(statusName, tab);
+            }
+        });
     }
 
     // --- NAVIGASI UI ---
@@ -386,13 +402,14 @@
                 source: 'Import'
             }));
 
-            // Tambahkan di memori lokal agar langsung terlihat
+            // Tambahkan di memori agar langsung terlihat
             allOrders = [...processed.reverse(), ...allOrders];
-            renderTable();
-            updateStats();
+            
+            // Pindah paksa ke tab "Semua" agar data ter-refresh visualnya
+            triggerTab('Semua'); 
             
             // Tembak data ke Google Sheets
-            syncToGoogleSheets(processed.reverse()); 
+            syncToGoogleSheets(processed); 
             
             alert(`Berhasil impor ${processed.length} pesanan.`);
             document.getElementById('fileUpload').value = '';
@@ -439,8 +456,7 @@
 
         allOrders.unshift(orderData);
         closeModal();
-        renderTable();
-        updateStats();
+        triggerTab('Semua');
         
         syncToGoogleSheets([orderData]); 
     }
@@ -464,7 +480,7 @@
     function filterStatus(status, element) {
         currentFilter = status;
         document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-        element.classList.add('active');
+        if(element) element.classList.add('active');
         renderTable();
     }
 
@@ -476,6 +492,7 @@
         
         if (allOrders.length === 0) {
              tbody.innerHTML = `<tr><td colspan="4" class="text-center py-16 text-gray-400"><i class="fas fa-folder-open text-3xl mb-2 block"></i> Belum ada data.</td></tr>`;
+             updateStats();
              return;
         }
         
@@ -490,6 +507,7 @@
 
         if (filteredOrders.length === 0) {
              tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-500">Pencarian tidak ditemukan.</td></tr>`;
+             updateStats();
              return;
         }
 
@@ -519,6 +537,8 @@
             `;
             tbody.appendChild(tr);
         });
+        
+        updateStats();
     }
 </script>
 </body>
