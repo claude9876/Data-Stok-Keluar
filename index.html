@@ -2,363 +2,599 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pesanan Harian</title>
-    <!-- Tambahkan link manifest -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sistem Manajemen Pesanan - Jiyora Wear</title>
     <link rel="manifest" href="./manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root {
-            --shopee-orange: #ee4d2d;
-            --shopee-orange-hover: #d73a1c;
-            --bg-sidebar: #ffffff;
-            --bg-main: #f6f6f6;
-            --text-main: #333333;
-        }
-
-        body { background-color: var(--bg-main); color: var(--text-main); font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-        .sidebar { width: 250px; background-color: var(--bg-sidebar); min-height: 100vh; border-right: 1px solid #e5e5e5; position: fixed; top: 0; left: 0; overflow-y: auto; }
-        .sidebar-item { padding: 12px 24px; color: #555; display: flex; align-items: center; cursor: pointer; transition: all 0.2s; }
-        .sidebar-item:hover, .sidebar-item.active { background-color: #fef0ef; color: var(--shopee-orange); font-weight: 500; }
-        .sidebar-item i { width: 24px; font-size: 1.1em; }
-        .top-header { margin-left: 250px; background-color: white; height: 60px; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: fixed; top: 0; right: 0; left: 0; z-index: 10; }
-        .main-content { margin-left: 250px; margin-top: 60px; padding: 24px; }
-        .content-card { background-color: white; border-radius: 4px; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); border: 1px solid #e5e5e5; margin-bottom: 24px; }
-        .tabs { display: flex; border-bottom: 1px solid #e5e5e5; background: white; }
-        .tab { padding: 16px 24px; cursor: pointer; color: #555; font-weight: 500; border-bottom: 2px solid transparent; }
-        .tab:hover, .tab.active { color: var(--shopee-orange); border-bottom: 2px solid var(--shopee-orange); }
-        .btn-shopee { background-color: var(--shopee-orange); color: white; padding: 8px 16px; border-radius: 2px; font-weight: 500; border: none; cursor: pointer; transition: 0.2s;}
-        .btn-shopee:hover { background-color: var(--shopee-orange-hover); }
-        .btn-outline { background-color: white; color: #555; border: 1px solid #ccc; padding: 8px 16px; border-radius: 2px; font-weight: 500; cursor: pointer; }
-        .btn-outline:hover { background-color: #f9f9f9; }
-        .input-field { width: 100%; padding: 8px 12px; border: 1px solid #ccc; border-radius: 2px; outline: none; }
-        .input-field:focus { border-color: var(--shopee-orange); }
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th { background-color: #f6f6f6; color: #999; font-weight: normal; padding: 12px 16px; border-bottom: 1px solid #e5e5e5; }
-        td { padding: 16px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
-        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 50; align-items: center; justify-content: center; }
-        .modal-content { background: white; border-radius: 4px; width: 600px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; }
-        .modal-header { padding: 16px 24px; border-bottom: 1px solid #e5e5e5; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 24px; overflow-y: auto; }
-        .modal-footer { padding: 16px 24px; border-top: 1px solid #e5e5e5; text-align: right; background: #fafafa; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 6px; color: #333; font-size: 14px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
-        /* Floating Sync Status */
-        #syncStatus {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #333;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 13px;
-            display: none;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 100;
+        :root {
+            --primary: #ee4d2d;
+            --primary-hover: #d73a1c;
+            --bg-body: #f1f5f9;
+            --bg-surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
         }
 
-        /* Responsive Sidebar */
+        body { 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior-y: none;
+        }
+
+        /* Layout Dasar */
+        .app-container { display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 260px; background-color: var(--bg-surface); border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 20;}
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .topbar { height: 70px; min-height: 70px; background-color: var(--bg-surface); border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 10;}
+        .content-area { flex: 1; overflow-y: auto; padding: 24px; }
+
+        /* UI Elements */
+        .nav-item { padding: 12px 20px; margin: 4px 16px; border-radius: 8px; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .nav-item:hover { background-color: #f8fafc; color: var(--text-main); }
+        .nav-item.active { background-color: #fff1f0; color: var(--primary); }
+        .nav-item i { width: 24px; font-size: 1.1em; }
+
+        .card { background: var(--bg-surface); border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 24px; overflow: hidden; }
+        
+        .btn-primary { background-color: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 500; border: none; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(238, 77, 45, 0.2); display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-outline { background-color: white; color: var(--text-main); border: 1px solid #cbd5e1; padding: 10px 20px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; justify-content: center;}
+        .btn-outline:active { background-color: #f8fafc; }
+        
+        .input-field { width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 14px; transition: 0.2s; background-color: #f8fafc;}
+        .input-field:focus { border-color: var(--primary); background-color: #ffffff; box-shadow: 0 0 0 3px rgba(238, 77, 45, 0.1); }
+
+        /* Tabs (Bisa di-swipe di HP) */
+        .tabs-container { display: flex; border-bottom: 1px solid #e2e8f0; padding: 0 16px; overflow-x: auto; -webkit-overflow-scrolling: touch;}
+        .tabs-container::-webkit-scrollbar { display: none; } 
+        .tab-btn { padding: 16px 20px; color: var(--text-muted); font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; white-space: nowrap;}
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        /* Table */
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 650px; }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; padding: 14px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+        td { padding: 16px; border-bottom: 1px solid #e2e8f0; vertical-align: top; font-size: 14px; }
+        
+        /* Modal & Dialogs */
+        .modal-backdrop { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); z-index: 50; align-items: center; justify-content: center; }
+        .modal-card { background: white; border-radius: 16px; width: 650px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 16px 16px 0 0;}
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .modal-footer { padding: 16px 20px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px; border-radius: 0 0 16px 16px;}
+
+        /* Sync Toast */
+        #syncToast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 100px; font-size: 13px; font-weight: 500; display: none; align-items: center; gap: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); z-index: 100;}
+        
+        /* Badges */
+        .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-orange { background: #ffedd5; color: #c2410c; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-gray { background: #f1f5f9; color: #475569; }
+        .badge-today { background: #ffe4e6; color: #e11d48; font-size: 9px; padding: 2px 6px; border: 1px solid #fecdd3;}
+
+        /* Navigasi Bawah Khusus Mobile (Android UI) */
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e2e8f0; z-index: 40; justify-content: space-around; align-items: center; padding: 8px 0; padding-bottom: env(safe-area-inset-bottom, 8px); box-shadow: 0 -2px 10px rgba(0,0,0,0.05);}
+        .bnav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; font-weight: 500; width: 33%; gap: 4px; padding: 4px 0;}
+        .bnav-item i { font-size: 20px; }
+        .bnav-item.active { color: var(--primary); }
+        .bnav-item.fab-btn { position: relative; top: -15px; color: white; }
+        .bnav-item.fab-btn .fab-circle { background: var(--primary); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(238, 77, 45, 0.4); border: 3px solid white;}
+
+        /* =========== RESPONSIVE MOBILE (ANDROID) =========== */
         @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .top-header { margin-left: 0; }
-            .main-content { margin-left: 0; padding: 12px; }
-            .tabs { flex-wrap: wrap; }
-            .tab { padding: 12px 16px; font-size: 13px; }
+            .sidebar { display: none !important; }
+            .topbar { padding: 0 16px; height: 60px; min-height: 60px; }
+            .main-content { padding-bottom: 60px; } 
+            .content-area { padding: 12px; }
+            
+            .grid-stats { grid-template-columns: 1fr; gap: 12px; mb: 12px; }
+            .card-stat { padding: 16px; }
+            
+            .modal-card { width: 100%; height: 100%; max-height: 100vh; border-radius: 0; }
+            .modal-header { border-radius: 0; padding: 16px; }
+            .modal-footer { border-radius: 0; padding: 16px; flex-direction: column-reverse; }
+            .modal-footer button { width: 100%; }
+            
+            #currentTime, #syncText { display: none; }
+            #syncIndicator { padding: 6px; border-radius: 50%; width: 28px; height: 28px; justify-content: center;}
+            
+            .bottom-nav { display: flex; }
+            .grid-cols-2 { grid-template-columns: 1fr; }
+            .col-span-2 { grid-column: span 1; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="p-6">
-            <h2 class="text-xl font-bold text-[var(--shopee-orange)] flex items-center">
-                <i class="fas fa-shopping-bag mr-2"></i> Seller Center
+<div class="app-container">
+    
+    <!-- Sidebar (Desktop) -->
+    <aside class="sidebar hidden md:flex">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <div class="w-8 h-8 rounded bg-[var(--primary)] text-white flex items-center justify-center"><i class="fas fa-tshirt text-sm"></i></div>
+                Jiyora Wear
             </h2>
-            <p class="text-xs text-gray-500 mt-1">Konveksi Amat Abidin</p>
         </div>
-        <div class="text-xs font-bold text-gray-400 uppercase px-6 py-2 mt-2">Pesanan</div>
-        <div class="sidebar-item active"><i class="far fa-list-alt"></i> Pesanan Saya</div>
-    </div>
+        
+        <div class="flex-1 py-4 overflow-y-auto">
+            <div class="px-6 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Operasional</div>
+            <div class="nav-item active" onclick="switchMenu('umum', this)" id="nav-desktop-umum">
+                <i class="fas fa-clipboard-list"></i> Pesanan Harian
+            </div>
+            
+            <div class="px-6 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 mt-6">Manajemen</div>
+            <div class="nav-item" onclick="switchMenu('admin', this)" id="nav-desktop-admin">
+                <i class="fas fa-user-shield"></i> Ruang Admin
+            </div>
+        </div>
 
-    <!-- Top Header -->
-    <div class="top-header">
-        <div class="text-lg font-medium flex items-center gap-4">
-            Pesanan Saya
-            <button id="btnConfig" class="text-xs bg-gray-100 text-green-600 px-3 py-1 rounded border border-gray-300 pointer-events-none">
-                <i class="fas fa-check"></i> Terhubung Spreadsheet
-            </button>
+        <div class="p-4 border-t border-gray-200 bg-slate-50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold" id="userInitial">U</div>
+                <div>
+                    <div id="activeUserLabel" class="text-sm font-bold text-gray-800">Operasional</div>
+                    <div class="text-xs text-green-600 flex items-center gap-1"><i class="fas fa-circle text-[8px]"></i> Online</div>
+                </div>
+            </div>
         </div>
-        <div class="flex items-center gap-4">
-            <span class="text-sm">Halo, Admin</span>
-            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white"><i class="fas fa-user"></i></div>
-        </div>
-    </div>
+    </aside>
 
     <!-- Main Content -->
-    <div class="main-content">
-        <div class="content-card">
-            <div class="tabs">
-                <div class="tab active" onclick="filterStatus('Semua', this)">Semua</div>
-                <div class="tab" onclick="filterStatus('Belum Dibayar', this)">Belum Dibayar</div>
-                <div class="tab" onclick="filterStatus('Perlu Dikirim', this)">Perlu Dikirim</div>
-                <div class="tab" onclick="filterStatus('Dikirim', this)">Dikirim</div>
-                <div class="tab" onclick="filterStatus('Selesai', this)">Selesai</div>
+    <main class="main-content">
+        
+        <!-- Topbar -->
+        <header class="topbar">
+            <div>
+                <h1 id="pageTitle" class="text-lg md:text-xl font-bold text-gray-800">Pesanan Harian</h1>
             </div>
+            <div class="flex items-center gap-3">
+                <div id="syncIndicator" class="hidden bg-green-50 text-green-700 px-3 py-1 md:py-1.5 rounded-full border border-green-200 flex items-center gap-1.5 font-medium">
+                    <i class="fas fa-cloud-check text-sm"></i> <span id="syncText" class="text-xs">Tersinkronisasi</span>
+                </div>
+                <div id="currentTime" class="text-sm font-medium text-gray-500"></div>
+            </div>
+        </header>
+
+        <!-- Area Konten -->
+        <div class="content-area">
             
-            <div class="p-4 flex justify-between items-center bg-gray-50 border-b border-gray-200">
-                <div class="w-1/2 relative">
-                    <input type="text" id="searchInput" placeholder="Cari No. Pesanan, Produk, atau Resi" class="input-field pl-3 pr-10">
-                    <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+            <!-- VIEW: DASHBOARD UMUM -->
+            <div id="view-umum" class="block">
+                
+                <!-- Kotak Statistik -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 grid-stats">
+                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-blue-500 mb-0">
+                        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-xl"><i class="fas fa-box"></i></div>
+                        <div><div class="text-xs md:text-sm text-gray-500 font-medium">Total Pesanan</div><div class="text-xl md:text-2xl font-bold text-gray-800" id="stat-total">0</div></div>
+                    </div>
+                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-[var(--primary)] mb-0">
+                        <div class="w-12 h-12 rounded-full bg-orange-50 text-[var(--primary)] flex items-center justify-center text-xl"><i class="fas fa-truck-fast"></i></div>
+                        <div><div class="text-xs md:text-sm text-gray-500 font-medium">Perlu Dikirim</div><div class="text-xl md:text-2xl font-bold text-gray-800" id="stat-toship">0</div></div>
+                    </div>
+                    <div class="card card-stat p-5 flex items-center gap-4 border-l-4 border-l-green-500 mb-0">
+                        <div class="w-12 h-12 rounded-full bg-green-50 text-green-500 flex items-center justify-center text-xl"><i class="fas fa-check-circle"></i></div>
+                        <div><div class="text-xs md:text-sm text-gray-500 font-medium">Selesai</div><div class="text-xl md:text-2xl font-bold text-gray-800" id="stat-done">0</div></div>
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <button class="btn-outline" onclick="document.getElementById('fileUpload').click()"><i class="fas fa-file-excel text-green-600"></i> Import Excel</button>
-                    <input type="file" id="fileUpload" accept=".xlsx, .xls" class="hidden" onchange="handleFile(event)">
-                    <button class="btn-shopee" onclick="openModal()"><i class="fas fa-plus"></i> Input Manual</button>
+
+                <!-- Card Tabel -->
+                <div class="card mb-0">
+                    <div class="p-4 flex flex-col md:flex-row justify-between items-center gap-3 border-b border-gray-100">
+                        <div class="relative w-full md:w-96">
+                            <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                            <input type="text" id="searchInput" placeholder="Cari Resi atau Nama..." class="input-field pl-9 bg-gray-50 border-transparent">
+                        </div>
+                        <button class="btn-primary w-full md:w-auto hidden md:flex" onclick="openModal()">
+                            <i class="fas fa-plus"></i> Input Manual
+                        </button>
+                    </div>
+                    
+                    <div class="tabs-container">
+                        <div class="tab-btn active" onclick="filterStatus('Semua', this)">Semua</div>
+                        <div class="tab-btn" onclick="filterStatus('Belum Dibayar', this)">Belum Dibayar</div>
+                        <div class="tab-btn" onclick="filterStatus('Perlu Dikirim', this)">Perlu Dikirim</div>
+                        <div class="tab-btn" onclick="filterStatus('Dikirim', this)">Dikirim</div>
+                        <div class="tab-btn" onclick="filterStatus('Selesai', this)">Selesai</div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="orderTable">
+                            <thead>
+                                <tr>
+                                    <th width="35%">Info Pembeli</th>
+                                    <th width="30%">Produk & Qty</th>
+                                    <th width="15%">Status</th>
+                                    <th width="20%">Pengiriman</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr id="emptyStateRow"><td colspan="4" class="text-center py-16 text-gray-400 flex flex-col items-center"><i class="fas fa-inbox text-4xl mb-3"></i> Belum ada pesanan terdaftar.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <div class="overflow-x-auto p-4">
-                <table id="orderTable">
-                    <thead>
-                        <tr>
-                            <th width="35%">Produk</th>
-                            <th width="15%">Qty</th>
-                            <th width="20%">Status</th>
-                            <th width="30%">Jasa Kirim / Resi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <tr id="emptyStateRow"><td colspan="4" class="text-center py-12 text-gray-500">Belum ada pesanan.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+            <!-- VIEW: DASHBOARD ADMIN -->
+            <div id="view-admin" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    <div class="card p-5">
+                        <h3 class="text-base font-bold text-gray-800 mb-1"><i class="fas fa-file-excel text-green-600 mr-2"></i> Import Data Excel</h3>
+                        <p class="text-xs text-gray-500 mb-5">Unggah file dari Shopee/Tiktok. Info harga akan diabaikan.</p>
+                        
+                        <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer" onclick="document.getElementById('fileUpload').click()">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                            <p class="font-medium text-gray-700 text-sm">Ketuk untuk pilih file (.xlsx)</p>
+                        </div>
+                        <input type="file" id="fileUpload" accept=".xlsx, .xls" class="hidden" onchange="handleFile(event)">
+                    </div>
 
-    <!-- Modal Input Manual -->
-    <div id="inputModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="text-lg font-bold">Input Pesanan Manual</h3>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="manualOrderForm">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="form-group col-span-2">
-                            <label>No. Pesanan / Resi (Bisa di-scan barcode)</label>
-                            <input type="text" id="m_no_pesanan" class="input-field" placeholder="Arahkan scanner/ketik disini">
-                        </div>
-                        <div class="form-group col-span-2">
-                            <label>Nama Produk <span class="text-red-500">*</span></label>
-                            <input type="text" id="m_nama_produk" class="input-field" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Variasi</label>
-                            <input type="text" id="m_variasi" class="input-field">
-                        </div>
-                        <div class="form-group">
-                            <label>Qty <span class="text-red-500">*</span></label>
-                            <input type="number" id="m_qty" class="input-field" required value="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="m_status" class="input-field">
-                                <option value="Perlu Dikirim">Perlu Dikirim</option>
-                                <option value="Dikirim">Dikirim</option>
-                                <option value="Selesai">Selesai</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Ekspedisi</label>
-                            <select id="m_ekspedisi" class="input-field">
-                                <option value="Shopee Express">Shopee Express</option>
-                                <option value="J&T Express">J&T Express</option>
-                                <option value="Ambil Sendiri">Ambil Sendiri</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-span-2">
-                            <label>Nama Pembeli</label>
-                            <input type="text" id="m_penerima" class="input-field">
+                    <div class="card p-5">
+                        <h3 class="text-base font-bold text-gray-800 mb-1"><i class="fas fa-database text-blue-600 mr-2"></i> Database Link</h3>
+                        <p class="text-xs text-gray-500 mb-5">Data tersimpan langsung ke Google Sheets.</p>
+                        
+                        <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-medium text-blue-800">Status Server</span>
+                                <span class="badge badge-green"><i class="fas fa-check mr-1"></i> Aktif</span>
+                            </div>
+                            <div class="text-[10px] text-gray-500 truncate mt-2 bg-white p-2 rounded border border-gray-200">
+                                ...macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec
+                            </div>
                         </div>
                     </div>
-                </form>
+
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn-outline mr-2" onclick="closeModal()">Batal</button>
-                <button type="button" class="btn-shopee" onclick="saveManualOrder()">Simpan & Sync</button>
+            
+        </div>
+    </main>
+
+    <!-- Navigasi Bawah Khusus HP Android -->
+    <nav class="bottom-nav">
+        <div class="bnav-item active" onclick="switchMenuMobile('umum', this)" id="nav-mobile-umum">
+            <i class="fas fa-home"></i>
+            <span>Beranda</span>
+        </div>
+        <div class="bnav-item fab-btn" onclick="openModal()">
+            <div class="fab-circle">
+                <i class="fas fa-plus"></i>
             </div>
+            <span class="mt-1 text-gray-700 font-bold">Input</span>
+        </div>
+        <div class="bnav-item" onclick="switchMenuMobile('admin', this)" id="nav-mobile-admin">
+            <i class="fas fa-cog"></i>
+            <span>Admin</span>
+        </div>
+    </nav>
+</div>
+
+<!-- Modal Input Manual -->
+<div id="inputModal" class="modal-backdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 class="text-lg font-bold text-gray-800">Input Manual / Scanner</h3>
+            <button onclick="closeModal()" class="text-gray-400 p-2"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="manualOrderForm">
+                <div class="grid grid-cols-2 gap-4">
+                    
+                    <div class="form-group col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">No. Pesanan / Resi *</label>
+                        <input type="text" id="m_no_pesanan" class="input-field" placeholder="Ketik/Scan barcode...">
+                    </div>
+                    
+                    <div class="form-group col-span-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Nama Produk *</label>
+                        <input type="text" id="m_nama_produk" class="input-field" required placeholder="Cth: Kemeja Nara">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Variasi</label>
+                        <input type="text" id="m_variasi" class="input-field" placeholder="Cth: Hitam, XL">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Qty *</label>
+                        <input type="number" id="m_qty" class="input-field" required value="1" min="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Status</label>
+                        <select id="m_status" class="input-field">
+                            <option value="Perlu Dikirim">Perlu Dikirim</option>
+                            <option value="Dikirim">Dikirim</option>
+                            <option value="Selesai">Selesai</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Kurir</label>
+                        <select id="m_ekspedisi" class="input-field">
+                            <option value="Shopee Express">Shopee Express</option>
+                            <option value="J&T Express">J&T Express</option>
+                            <option value="Ambil Sendiri">Ambil Sendiri</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group col-span-2 mt-2">
+                        <label class="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Nama Pembeli</label>
+                        <input type="text" id="m_penerima" class="input-field" placeholder="Nama penerima paket">
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-outline" onclick="closeModal()">Batal</button>
+            <button type="button" class="btn-primary" onclick="saveManualOrder()"><i class="fas fa-save"></i> Simpan ke Sheets</button>
         </div>
     </div>
+</div>
 
-    <!-- Sync Indicator -->
-    <div id="syncStatus">
-        <i class="fas fa-sync fa-spin"></i> Menyinkronkan ke Spreadsheet...
-    </div>
+<div id="syncToast">
+    <i class="fas fa-spinner fa-spin"></i> Menyimpan data...
+</div>
 
-    <script>
-        // --- SERVICE WORKER REGISTRATION ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('Service Worker terdaftar!', reg))
-                .catch(err => console.log('Service Worker gagal:', err));
-            });
-        }
+<script>
+    let allOrders = [];
+    let currentFilter = 'Semua';
+    let currentRole = 'umum';
+    
+    // --- Konfigurasi Google Sheets ---
+    const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec';
+
+    // --- Jam Digital ---
+    setInterval(() => {
+        const now = new Date();
+        document.getElementById('currentTime').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+    }, 1000);
+
+    // --- Utility: Cek Hari Ini ---
+    function checkIsToday(dateString) {
+        if (!dateString || dateString === '-') return false;
+        const today = new Date();
+        const d = today.getDate().toString().padStart(2, '0');
+        const m = (today.getMonth() + 1).toString().padStart(2, '0');
+        const y = today.getFullYear();
         
-        let allOrders = [];
-        let currentFilter = 'Semua';
-        
-        // --- HARDCODED GOOGLE SCRIPT URL ---
-        const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbzXvmrirzm5qmo9m-eotVTvXccLCbHJD8dTZHI6J0gMlxOhAaB9TKDxAKX47ZvZHB41/exec';
+        return dateString.includes(`${y}-${m}-${d}`) || 
+               dateString.includes(`${d}-${m}-${y}`) || 
+               dateString.includes(`${d}/${m}/${y}`);
+    }
 
-        function syncToGoogleSheets(dataArray) {
-            const syncUI = document.getElementById('syncStatus');
-            syncUI.style.display = 'flex';
-            syncUI.innerHTML = '<i class="fas fa-sync fa-spin"></i> Menyinkronkan ke Spreadsheet...';
-
-            fetch(googleAppScriptUrl, {
-                method: 'POST',
-                body: JSON.stringify(dataArray),
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            })
-            .then(res => res.json())
-            .then(res => {
-                syncUI.innerHTML = '<i class="fas fa-check text-green-400"></i> Berhasil disimpan di Spreadsheet!';
-                setTimeout(() => syncUI.style.display = 'none', 3000);
-            })
-            .catch(err => {
-                syncUI.innerHTML = '<i class="fas fa-times text-red-400"></i> Gagal terhubung. Cek koneksi / URL.';
-                setTimeout(() => syncUI.style.display = 'none', 4000);
-            });
+    // --- Fungsi Beralih Layar (Desktop) ---
+    function switchMenu(role, element) {
+        if(role === 'admin' && currentRole !== 'admin') {
+            const pin = prompt("Masukkan PIN Admin:");
+            if(pin !== "199805") { alert("PIN Salah!"); return; }
+            document.getElementById('activeUserLabel').innerText = "Admin";
+            document.getElementById('userInitial').innerText = "A";
+            document.getElementById('userInitial').className = "w-10 h-10 rounded-full bg-[var(--primary)] flex items-center justify-center text-white font-bold";
+        } else if (role === 'umum') {
+            document.getElementById('activeUserLabel').innerText = "Operasional";
+            document.getElementById('userInitial').innerText = "U";
+            document.getElementById('userInitial').className = "w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold";
         }
 
-        function handleFile(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        currentRole = role;
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        toggleViews(role);
+    }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "-" });
-                
-                const processed = rawData.map(row => ({
-                    id: row['No. Pesanan'] || 'N/A',
-                    productName: row['Nama Produk'] || '',
-                    variation: row['Nama Variasi'] !== '-' ? row['Nama Variasi'] : '',
-                    qty: row['Jumlah'] || 1,
-                    status: row['Status Pesanan'] || 'Unknown',
-                    courier: row['Opsi Pengiriman'] || '',
-                    resi: row['No. Resi'] !== '-' ? row['No. Resi'] : '',
-                    buyerName: row['Nama Penerima'] || row['Username (Pembeli)'] || '-',
-                    source: 'Import Excel'
-                }));
-
-                // Render ke tabel HTML
-                allOrders = [...processed, ...allOrders];
-                renderTable();
-                
-                // Sinkronkan batch data ke Google Sheets
-                syncToGoogleSheets(processed);
-            };
-            reader.readAsArrayBuffer(file);
+    // --- Fungsi Beralih Layar (Mobile Bottom Nav) ---
+    function switchMenuMobile(role, element) {
+        if(role === 'admin' && currentRole !== 'admin') {
+            const pin = prompt("Masukkan PIN Admin:");
+            if(pin !== "199805") { alert("PIN Salah!"); return; }
         }
+        currentRole = role;
+        document.querySelectorAll('.bnav-item').forEach(el => el.classList.remove('active'));
+        element.classList.add('active');
+        toggleViews(role);
+    }
 
-        function openModal() {
-            const rnd = Math.floor(1000 + Math.random() * 9000);
-            document.getElementById('m_no_pesanan').value = `MANUAL-260911-${rnd}`;
-            document.getElementById('inputModal').style.display = 'flex';
-        }
+    function toggleViews(role) {
+        document.getElementById('view-umum').classList.add('hidden');
+        document.getElementById('view-admin').classList.add('hidden');
+        document.getElementById(`view-${role}`).classList.remove('hidden');
+        document.getElementById('pageTitle').innerText = role === 'admin' ? 'Ruang Admin' : 'Pesanan Harian';
+    }
 
-        function closeModal() { document.getElementById('inputModal').style.display = 'none'; document.getElementById('manualOrderForm').reset(); }
+    // --- Google Sheets Sync ---
+    function syncToGoogleSheets(dataArray) {
+        const toast = document.getElementById('syncToast');
+        toast.style.display = 'flex';
+        toast.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan data...';
+        document.getElementById('syncIndicator').classList.remove('hidden');
 
-        function saveManualOrder() {
-            const orderData = {
-                id: document.getElementById('m_no_pesanan').value,
-                productName: document.getElementById('m_nama_produk').value,
-                variation: document.getElementById('m_variasi').value,
-                qty: document.getElementById('m_qty').value,
-                status: document.getElementById('m_status').value,
-                courier: document.getElementById('m_ekspedisi').value,
-                resi: document.getElementById('m_no_pesanan').value, 
-                buyerName: document.getElementById('m_penerima').value,
-                source: 'Input Manual'
-            };
+        fetch(googleAppScriptUrl, {
+            method: 'POST',
+            body: JSON.stringify(dataArray),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        })
+        .then(res => res.json())
+        .then(res => {
+            toast.innerHTML = '<i class="fas fa-check-circle text-green-400"></i> Berhasil disimpan!';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        })
+        .catch(err => {
+            toast.innerHTML = '<i class="fas fa-exclamation-triangle text-red-400"></i> Gagal sinkronisasi.';
+            document.getElementById('syncIndicator').classList.add('hidden');
+            setTimeout(() => toast.style.display = 'none', 4000);
+        });
+    }
 
-            if(!orderData.productName) { alert("Nama Produk wajib diisi!"); return; }
+    // --- File Input (Import Excel) ---
+    function handleFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
 
-            allOrders.unshift(orderData);
-            closeModal();
-            renderTable();
-
-            // Sinkronkan data tunggal ini ke Google Sheets
-            syncToGoogleSheets([orderData]);
-        }
-
-        function getStatusColor(status) {
-            status = status.toLowerCase();
-            if (status.includes('batal')) return 'text-red-500 bg-red-50 border-red-200';
-            if (status.includes('selesai')) return 'text-green-600 bg-green-50 border-green-200';
-            if (status.includes('dikirim')) return 'text-blue-600 bg-blue-50 border-blue-200';
-            if (status.includes('perlu dikirim')) return 'text-[var(--shopee-orange)] bg-orange-50 border-orange-200';
-            return 'text-gray-600 bg-gray-50 border-gray-200';
-        }
-
-        function filterStatus(status, element) {
-            currentFilter = status;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            element.classList.add('active');
-            renderTable();
-        }
-
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '';
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "-" });
             
-            let filteredOrders = allOrders.filter(order => {
-                if (currentFilter !== 'Semua' && !order.status.toLowerCase().includes(currentFilter.toLowerCase())) return false;
-                if (searchTerm && !`${order.id} ${order.productName} ${order.resi} ${order.buyerName}`.toLowerCase().includes(searchTerm)) return false;
-                return true;
-            });
+            const processed = rawData.map(row => ({
+                id: row['No. Pesanan'] || 'N/A',
+                productName: row['Nama Produk'] || '',
+                variation: row['Nama Variasi'] !== '-' ? row['Nama Variasi'] : '',
+                qty: row['Jumlah'] || 1,
+                status: row['Status Pesanan'] || 'Unknown',
+                courier: row['Opsi Pengiriman'] || '',
+                resi: row['No. Resi'] !== '-' ? row['No. Resi'] : '',
+                buyerName: row['Nama Penerima'] || row['Username (Pembeli)'] || '-',
+                orderDate: row['Waktu Pesanan Dibuat'] || row['Waktu Pembayaran Dilakukan'] || '-', // Ambil Waktu
+                source: 'Import'
+            }));
 
-            if (filteredOrders.length === 0) {
-                 tbody.innerHTML = `<tr id="emptyStateRow"><td colspan="4" class="text-center py-12 text-gray-500">Tidak ada pesanan.</td></tr>`;
-                 return;
-            }
+            // Gabungkan data
+            allOrders = [...processed, ...allOrders];
+            renderTable();
+            updateStats();
+            syncToGoogleSheets(processed);
+            
+            alert(`Berhasil impor ${processed.length} pesanan.`);
+            document.getElementById('fileUpload').value = '';
+        };
+        reader.readAsArrayBuffer(file);
+    }
 
-            filteredOrders.forEach(order => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <div class="font-bold text-sm">${order.buyerName}</div>
-                        <div class="text-sm mt-2">${order.productName}</div>
-                        <div class="text-xs text-gray-500">Variasi: ${order.variation}</div>
-                    </td>
-                    <td><div class="text-lg font-medium">${order.qty}</div></td>
-                    <td><span class="px-2 py-1 border rounded text-xs font-medium ${getStatusColor(order.status)}">${order.status}</span></td>
-                    <td>
-                        <div class="text-sm">${order.courier}</div>
-                        <div class="text-xs mt-1 bg-gray-100 px-2 py-1 rounded inline-block">${order.resi}</div>
-                        <div class="text-[10px] text-gray-400 mt-1">Via: ${order.source}</div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+    // --- Modal Input Manual ---
+    function openModal() {
+        const rnd = Math.floor(1000 + Math.random() * 9000);
+        document.getElementById('m_no_pesanan').value = `MAN-${rnd}`;
+        document.getElementById('inputModal').style.display = 'flex';
+        setTimeout(() => document.getElementById('m_no_pesanan').select(), 300);
+    }
+
+    function closeModal() { 
+        document.getElementById('inputModal').style.display = 'none'; 
+        document.getElementById('manualOrderForm').reset(); 
+    }
+
+    function saveManualOrder() {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+        const dd = now.getDate().toString().padStart(2, '0');
+        const hh = now.getHours().toString().padStart(2, '0');
+        const min = now.getMinutes().toString().padStart(2, '0');
+        const formattedDate = `${yyyy}-${mm}-${dd} ${hh}:${min}`; 
+
+        const orderData = {
+            id: document.getElementById('m_no_pesanan').value,
+            productName: document.getElementById('m_nama_produk').value,
+            variation: document.getElementById('m_variasi').value,
+            qty: document.getElementById('m_qty').value,
+            status: document.getElementById('m_status').value,
+            courier: document.getElementById('m_ekspedisi').value,
+            resi: document.getElementById('m_no_pesanan').value, 
+            buyerName: document.getElementById('m_penerima').value || 'Offline',
+            orderDate: formattedDate,
+            source: 'Manual'
+        };
+
+        if(!orderData.productName) { alert("Nama Produk harus diisi!"); return; }
+
+        allOrders.unshift(orderData);
+        closeModal();
+        renderTable();
+        updateStats();
+        syncToGoogleSheets([orderData]);
+    }
+
+    // --- Render Table ---
+    function getStatusBadge(status) {
+        status = status.toLowerCase();
+        if (status.includes('batal')) return '<span class="badge badge-red">Dibatalkan</span>';
+        if (status.includes('selesai')) return '<span class="badge badge-green">Selesai</span>';
+        if (status.includes('dikirim')) return '<span class="badge badge-blue">Dikirim</span>';
+        if (status.includes('perlu dikirim') || status.includes('to ship')) return '<span class="badge badge-orange">Perlu Dikirim</span>';
+        return '<span class="badge badge-gray">' + status + '</span>';
+    }
+
+    function updateStats() {
+        document.getElementById('stat-total').innerText = allOrders.length;
+        document.getElementById('stat-toship').innerText = allOrders.filter(o => o.status.toLowerCase().includes('perlu dikirim') || o.status.toLowerCase().includes('to ship')).length;
+        document.getElementById('stat-done').innerText = allOrders.filter(o => o.status.toLowerCase().includes('selesai')).length;
+    }
+
+    function filterStatus(status, element) {
+        currentFilter = status;
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        element.classList.add('active');
+        renderTable();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function(e) { renderTable(e.target.value.toLowerCase()); });
+
+    function renderTable(searchTerm = '') {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        
+        if (allOrders.length === 0) {
+             tbody.innerHTML = `<tr><td colspan="4" class="text-center py-16 text-gray-400"><i class="fas fa-folder-open text-3xl mb-2 block"></i> Belum ada data.</td></tr>`;
+             return;
         }
         
-        function renderTable() {
-            // Trigger search function with empty string to render all
-            document.getElementById('searchInput').dispatchEvent(new Event('input'));
+        let filteredOrders = allOrders.filter(order => {
+            if (currentFilter !== 'Semua') {
+                if (currentFilter === 'Perlu Dikirim' && !order.status.toLowerCase().includes('perlu dikirim') && !order.status.toLowerCase().includes('to ship')) return false;
+                if (currentFilter !== 'Perlu Dikirim' && !order.status.toLowerCase().includes(currentFilter.toLowerCase())) return false;
+            }
+            if (searchTerm && !`${order.id} ${order.productName} ${order.resi} ${order.buyerName}`.toLowerCase().includes(searchTerm)) return false;
+            return true;
+        });
+
+        if (filteredOrders.length === 0) {
+             tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-500">Pencarian tidak ditemukan.</td></tr>`;
+             return;
         }
-    </script>
+
+        filteredOrders.forEach(order => {
+            const tr = document.createElement('tr');
+            
+            // Cek apakah pesanan ini dibuat pada Hari Ini
+            const isToday = checkIsToday(order.orderDate) || order.source === 'Manual';
+            const dateBadge = isToday ? `<span class="badge-today rounded-full ml-1"><i class="fas fa-bolt"></i> Baru</span>` : '';
+            
+            // Render Baris
+            tr.innerHTML = `
+                <td>
+                    <div class="font-semibold text-gray-800 text-sm truncate w-32 md:w-auto">${order.buyerName}</div>
+                    <div class="text-[10px] md:text-xs text-gray-500 mt-1">${order.id}</div>
+                    <div class="text-[10px] text-gray-400 mt-1.5 flex items-center">
+                        <i class="far fa-clock mr-1"></i> ${order.orderDate !== '-' ? order.orderDate : 'Tgl tidak ada'} ${dateBadge}
+                    </div>
+                </td>
+                <td>
+                    <div class="text-xs md:text-sm font-medium text-gray-800 truncate w-32 md:w-48" title="${order.productName}">${order.productName}</div>
+                    <div class="text-[10px] md:text-xs text-gray-500 mt-1">Var: <span class="font-medium text-gray-700">${order.variation || '-'}</span> <span class="mx-1 text-gray-300">|</span> Qty: <span class="font-bold text-[var(--primary)]">${order.qty}</span></div>
+                </td>
+                <td>${getStatusBadge(order.status)}</td>
+                <td>
+                    <div class="text-xs md:text-sm font-medium text-gray-700">${order.courier}</div>
+                    ${order.resi ? `<div class="text-[10px] md:text-xs font-mono bg-slate-100 text-slate-700 px-1.5 md:px-2 py-1 rounded inline-block mt-1 select-all border border-slate-200">${order.resi}</div>` : `<div class="text-[10px] md:text-xs text-gray-400 mt-1 italic">Belum ada resi</div>`}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+</script>
 </body>
 </html>
