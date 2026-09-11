@@ -369,6 +369,11 @@
              <div class="absolute bottom-[-2px] right-[-2px] w-6 h-6 border-b-4 border-r-4 border-white rounded-br"></div>
              <p class="text-white/50 text-xs mt-24">Arahkan Barcode Kesini</p>
         </div>
+        <!-- Overlay saat foto dari Galeri sedang dipindai -->
+        <div id="scanProcessingOverlay" class="hidden absolute inset-0 z-20 flex-col items-center justify-center bg-black/80">
+            <i class="fas fa-spinner fa-spin text-4xl text-white mb-3"></i>
+            <p class="text-white text-sm font-medium">Memindai foto...</p>
+        </div>
     </div>
 
     <!-- Footer Controls (Galeri) -->
@@ -381,15 +386,12 @@
             <div class="w-14 h-14 rounded-full bg-[#1f1f1f] border border-gray-600 flex items-center justify-center">
                 <i class="fas fa-image text-2xl text-white"></i>
             </div>
-            <span class="text-xs font-medium text-gray-300">Galeri</span>
+            <span id="galeriLabel" class="text-xs font-medium text-gray-300">Galeri</span>
         </label>
     </footer>
 </div>
 
 <div id="syncToast"><i class="fas fa-spinner fa-spin"></i> Memuat data...</div>
-
-<!-- Audio Suara Beep Sukses Scan -->
-<audio id="scanBeep" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
 
 <script>
     let allOrders = [];
@@ -397,7 +399,8 @@
     let currentRole = 'umum';
     
     // Variabel Global untuk Scanner
-    let html5QrCode; 
+    let html5QrCode = null;
+    let audioCtx = null; // AudioContext untuk bunyi beep (dibuat saat tombol scan ditekan, sesuai kebijakan autoplay browser)
     
     // --- MASUKKAN URL GOOGLE SHEETS ANDA DISINI ---
     const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyUOkCIJFXL6ImObIuKpCLs2nTFOtx-XZVA16RxXLaPFkx6fxZs294VpTopWwrw4LNU/exec';
@@ -580,16 +583,48 @@
     
     function openScannerApp() {
         document.getElementById('scannerAppOverlay').style.display = 'flex';
-        
-        // Inisialisasi Pustaka
-        if(!html5QrCode) {
+        setGalleryProcessing(false);
+
+        // Siapkan AudioContext di sini karena dipicu langsung oleh klik pengguna,
+        // supaya nanti beep sukses tidak diblokir kebijakan autoplay browser
+        if (!audioCtx) {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log("Web Audio API tidak didukung, beep akan dilewati.", e);
+            }
+        }
+
+        startCameraScan();
+    }
+
+    function startCameraScan() {
+        // Pastikan pustaka scanner benar-benar termuat
+        if (typeof Html5Qrcode === 'undefined') {
+            alert("Pustaka scanner gagal dimuat (cek koneksi internet Anda), lalu muat ulang halaman.");
+            closeScannerApp();
+            return;
+        }
+
+        if (!html5QrCode) {
             html5QrCode = new Html5Qrcode("reader");
         }
+
+        // Sudah berjalan? Jangan start dobel, cukup diamkan
+        if (html5QrCode.isScanning) return;
+
+        // Kotak fokus responsif (persentase dari ukuran video asli),
+        // supaya tidak error "qrbox lebih besar dari video" di sebagian perangkat/kamera
+        const qrboxFunction = function (viewfinderWidth, viewfinderHeight) {
+            const boxWidth = Math.floor(Math.min(viewfinderWidth * 0.85, 340));
+            const boxHeight = Math.floor(Math.min(boxWidth * 0.5, viewfinderHeight * 0.6));
+            return { width: boxWidth, height: boxHeight };
+        };
 
         // Mulai kamera belakang
         html5QrCode.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 150 } }, // Menggunakan frame persegi panjang untuk resi
+            { fps: 10, qrbox: qrboxFunction },
             (decodedText, decodedResult) => {
                 // Berhasil scan dari kamera
                 handleScanSuccess(decodedText);
@@ -598,50 +633,106 @@
                 // Terjadi error/belum nemu barcode, biarkan saja jalan terus
             }
         ).catch(err => {
-            alert("Maaf, gagal mengakses kamera perangkat. Pastikan izin kamera telah diberikan.");
-            closeScannerApp();
+            console.log("Gagal memulai kamera:", err);
+            // Jangan langsung tutup overlay-nya: biarkan pengguna tetap bisa pakai tombol Galeri
+            alert("Gagal mengakses kamera perangkat. Anda tetap bisa memilih foto resi lewat tombol Galeri di bawah.");
+        });
+    }
+
+    // Menghentikan sesi kamera dengan aman, mengembalikan Promise agar bisa "ditunggu"
+    // sebelum memulai proses lain (mis. scan dari Galeri) pada instance yang sama
+    function stopCameraScan() {
+        return new Promise((resolve) => {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    try { html5QrCode.clear(); } catch (e) { /* abaikan */ }
+                    resolve();
+                }).catch(err => {
+                    console.log("Error stopping scanner", err);
+                    resolve();
+                });
+            } else {
+                resolve();
+            }
         });
     }
 
     function closeScannerApp() {
         document.getElementById('scannerAppOverlay').style.display = 'none';
-        if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().then(() => {
-                html5QrCode.clear();
-            }).catch(err => {
-                console.log("Error stopping scanner", err);
-            });
-        }
+        setGalleryProcessing(false);
+        stopCameraScan();
     }
 
     // Event saat pengguna memilih foto dari Galeri
     document.getElementById('qr-input-file').addEventListener('change', e => {
         if (e.target.files.length == 0) return;
-        
+
         const imageFile = e.target.files[0];
-        if(!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
-        
-        // Scan dari File Foto yang diupload
-        html5QrCode.scanFile(imageFile, true)
-            .then(decodedText => {
-                handleScanSuccess(decodedText);
-            })
-            .catch(err => {
-                alert("Barcode tidak ditemukan pada foto ini. Pastikan foto resi jelas dan tidak blur.");
-            });
-            
-        // Kosongkan kembali input file
+        setGalleryProcessing(true);
+
+        // PENTING: kamera WAJIB dihentikan dulu sebelum scanFile() dijalankan.
+        // Pustaka html5-qrcode tidak mengizinkan scan kamera & scan file berjalan
+        // bersamaan pada instance yang sama — inilah sebabnya tombol Galeri
+        // sebelumnya selalu gagal selama kamera masih aktif.
+        stopCameraScan().then(() => {
+            if (!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
+
+            html5QrCode.scanFile(imageFile, true)
+                .then(decodedText => {
+                    setGalleryProcessing(false);
+                    handleScanSuccess(decodedText);
+                })
+                .catch(err => {
+                    setGalleryProcessing(false);
+                    alert("Barcode tidak ditemukan pada foto ini. Pastikan foto resi jelas dan tidak blur.");
+                    // Nyalakan lagi kamera supaya pengguna bisa langsung coba scan ulang
+                    startCameraScan();
+                });
+        });
+
+        // Kosongkan kembali input file agar foto yang sama bisa dipilih lagi nanti
         e.target.value = '';
     });
 
+    function setGalleryProcessing(isLoading) {
+        const overlay = document.getElementById('scanProcessingOverlay');
+        const label = document.getElementById('galeriLabel');
+        if (overlay) {
+            overlay.classList.toggle('hidden', !isLoading);
+            overlay.classList.toggle('flex', isLoading);
+        }
+        if (label) label.innerText = isLoading ? 'Memindai...' : 'Galeri';
+    }
+
+    // Bunyi beep sukses dibuat langsung lewat Web Audio API (tanpa file eksternal)
+    // supaya selalu bunyi walau tanpa koneksi internet / file mp3 dari pihak ketiga error.
+    function playBeepSound() {
+        if (!audioCtx) return;
+        try {
+            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.15);
+        } catch (e) {
+            console.log('Beep gagal diputar', e);
+        }
+    }
+
     function handleScanSuccess(text) {
-        // Bunyikan Beep saat sukses (Opsional)
-        document.getElementById('scanBeep').play().catch(e => console.log('Autoplay audio diblokir browser.'));
-        
+        // Bunyikan Beep saat sukses
+        playBeepSound();
+
         // Masukkan Hasil Scan ke form dan matikan kamera
         document.getElementById('m_no_pesanan').value = text;
         closeScannerApp();
-        
+
         // Pindah kursor fokus ke kolom nama produk agar lebih cepat
         document.getElementById('m_nama_produk').focus();
     }
